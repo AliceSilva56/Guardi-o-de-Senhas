@@ -28,7 +28,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void toggleShowConfidential() async {
-    // apenas habilita a visualização após checar a senha mestra
     if (!showConfidential) {
       final result = await _askMasterPassword();
       if (!result) return;
@@ -45,13 +44,20 @@ class _MainScreenState extends State<MainScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Verificar Senha Mestra'),
-        content: TextField(controller: controller, obscureText: true, decoration: const InputDecoration(labelText: 'Senha Mestra')),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'Senha Mestra'),
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () {
-            final ok = PasswordService.verifyMasterPassword(controller.text.trim());
-            Navigator.pop(context, ok);
-          }, child: const Text('Verificar')),
+          ElevatedButton(
+            onPressed: () {
+              final ok = PasswordService.verifyMasterPassword(controller.text.trim());
+              Navigator.pop(context, ok);
+            },
+            child: const Text('Verificar'),
+          ),
         ],
       ),
     );
@@ -66,6 +72,7 @@ class _MainScreenState extends State<MainScreen> {
     final notesController = TextEditingController(text: editing?.notes ?? '');
     bool isConfidential = editing?.confidential ?? false;
 
+    bool obscurePassword = true; // controla mostrar/ocultar senha
     String strengthText = '';
     String strengthLevel = '';
 
@@ -73,7 +80,7 @@ class _MainScreenState extends State<MainScreen> {
       final res = PasswordService.calculatePasswordStrength(pwd);
       strengthText = res['text']!;
       strengthLevel = res['level']!;
-      setState(() {}); // atualizar diálogo via rebuild do StatefulBuilder
+      setState(() {});
     }
 
     showDialog(
@@ -84,16 +91,23 @@ class _MainScreenState extends State<MainScreen> {
           content: SingleChildScrollView(
             child: Column(
               children: [
-                TextField(controller: siteController, decoration: const InputDecoration(labelText: 'Site/Serviço')),
+                TextField(
+                  controller: siteController,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(labelText: 'Site/Serviço'),
+                ),
                 const SizedBox(height: 8),
-                TextField(controller: userController, decoration: const InputDecoration(labelText: 'Usuário/Email')),
+                TextField(
+                  controller: userController,
+                  decoration: const InputDecoration(labelText: 'Usuário/Email'),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: passController,
-                        obscureText: true,
+                        obscureText: obscurePassword,
                         onChanged: (v) => updateStrength(v),
                         decoration: const InputDecoration(labelText: 'Senha'),
                       ),
@@ -108,18 +122,17 @@ class _MainScreenState extends State<MainScreen> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.copy),
-                      tooltip: 'Copiar',
+                      icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off),
+                      tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
                       onPressed: () {
-                        // copiar para clipboard
-                        Clipboard.setData(ClipboardData(text: passController.text));
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Senha copiada')));
+                        setState(() {
+                          obscurePassword = !obscurePassword;
+                        });
                       },
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                // Indicador de força
                 if (passController.text.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,19 +140,37 @@ class _MainScreenState extends State<MainScreen> {
                       Text('Força: ${strengthText.isEmpty ? PasswordService.calculatePasswordStrength(passController.text)['text'] : strengthText}'),
                       const SizedBox(height: 4),
                       LinearProgressIndicator(
-                        value: (PasswordService.calculatePasswordStrength(passController.text)['level'] == 'weak') ? 0.33 : (PasswordService.calculatePasswordStrength(passController.text)['level'] == 'medium') ? 0.66 : 1.0,
+                        value: (PasswordService.calculatePasswordStrength(passController.text)['level'] == 'weak')
+                            ? 0.33
+                            : (PasswordService.calculatePasswordStrength(passController.text)['level'] == 'medium')
+                                ? 0.66
+                                : 1.0,
                         minHeight: 6,
                       ),
                     ],
                   ),
                 const SizedBox(height: 8),
-                TextField(controller: categoryController, decoration: const InputDecoration(labelText: 'Categoria')),
+                TextField(
+                  controller: categoryController,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(labelText: 'Categoria'),
+                ),
                 const SizedBox(height: 8),
-                TextField(controller: notesController, decoration: const InputDecoration(labelText: 'Notas'), maxLines: 3),
+                TextField(
+                  controller: notesController,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(labelText: 'Notas'),
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Checkbox(value: isConfidential, onChanged: (v) { setState(() => isConfidential = v ?? false); }),
+                    Checkbox(
+                      value: isConfidential,
+                      onChanged: (v) {
+                        setState(() => isConfidential = v ?? false);
+                      },
+                    ),
                     const Text('Marcar como confidencial (requer senha para visualizar)'),
                   ],
                 )
@@ -186,11 +217,14 @@ class _MainScreenState extends State<MainScreen> {
         content: const Text('Confirma exclusão?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () async {
-            await PasswordService.deletePassword(id);
-            loadPasswords();
-            Navigator.pop(context);
-          }, child: const Text('Excluir')),
+          ElevatedButton(
+            onPressed: () async {
+              await PasswordService.deletePassword(id);
+              loadPasswords();
+              Navigator.pop(context);
+            },
+            child: const Text('Excluir'),
+          ),
         ],
       ),
     );
@@ -215,7 +249,14 @@ class _MainScreenState extends State<MainScreen> {
         onRefresh: () async => loadPasswords(),
         child: list.isEmpty
             ? ListView(
-                children: const [Center(child: Padding(padding: EdgeInsets.all(40), child: Text('Nenhuma senha')))],
+                children: const [
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Text('Nenhuma senha'),
+                    ),
+                  )
+                ],
               )
             : ListView.builder(
                 itemCount: list.length,
@@ -225,14 +266,18 @@ class _MainScreenState extends State<MainScreen> {
                     title: Text(p.siteName),
                     subtitle: Text(p.username),
                     leading: p.confidential ? const Icon(Icons.lock) : null,
-                    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                      IconButton(icon: const Icon(Icons.edit), onPressed: () => addPasswordDialog(editing: p)),
-                      IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => confirmDelete(p.id)),
-                    ]),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(icon: const Icon(Icons.edit), onPressed: () => addPasswordDialog(editing: p)),
+                        IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => confirmDelete(p.id)),
+                      ],
+                    ),
                     onTap: () {
-                      // visualizar ou copiar senha
                       if (p.confidential && !showConfidential) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Senha confidencial — verifique modo confidencial')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Senha confidencial — verifique modo confidencial')),
+                        );
                         return;
                       }
                       Clipboard.setData(ClipboardData(text: p.password));
@@ -242,7 +287,10 @@ class _MainScreenState extends State<MainScreen> {
                 },
               ),
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () => addPasswordDialog(), child: const Icon(Icons.add)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => addPasswordDialog(),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
