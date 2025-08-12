@@ -1,80 +1,100 @@
----
+📌 Guardião de Senhas – Próximas Alterações e Melhorias
 
-📌 Guardião de Senhas
+🖥 Tela de Apresentação
 
-Um aplicativo Flutter para organização e gerenciamento seguro de senhas.
+[ ] Criar tela inicial de apresentação (splash screen ou intro animada).
 
-
----
-
-🚀 Primeiras Etapas
-
-No primeiro contato com o aplicativo, será exibida a tela de registro para criar sua conta.
+[ ] Exibir tela de registro no primeiro contato com o aplicativo.
 
 
 
 ---
 
-🛠 Funcionalidades Planejadas
+🔐 Modo Confidencial
 
-1. Adicionar Senha
+[ ] Criar senha do modo confidencial (definida nas configurações).
 
-Campos Site/Serviço, Categoria e Notas devem iniciar sempre com letra maiúscula.
+[ ] Adicionar área de configurações contendo:
 
-No campo Senha, substituir o botão de "Copiar" por um botão de Mostrar/Ocultar senha.
+Perfil do usuário
+
+Criar backup
+
+Importar backup
+
+Alterar senha do modo confidencial
+
+
+[ ] Ao ativar o modo confidencial:
+
+[ ] Alterar completamente a cor e o estilo visual do app.
+
+[ ] Mostrar apenas senhas confidenciais.
+
 
 
 
 ---
 
-2. Organização por Categorias
+📂 Organização por Categorias
 
-Ao adicionar uma senha, ela será automaticamente organizada em pastas de acordo com a categoria escolhida.
-As categorias disponíveis e suas descrições são:
+[ ] Ao inserir uma senha, criar pasta da categoria automaticamente.
 
-Pessoal/Persona → documentos, cadastros gerais, compras online.
+[ ] Organizar as senhas dentro da pasta correspondente.
 
-Profissional → e-mail corporativo, sistemas de trabalho, intranet, e-mail de cursos.
+[ ] Exibir descrição da categoria junto com o nome.
 
-Bancos e Finanças → contas bancárias, cartões, investimentos, PayPal, Pix.
+
+Lista de Categorias:
+
+Pessoal/Persona → documentos, cadastros gerais, compras online
+
+Profissional → e-mail corporativo, sistemas de trabalho, intranet, e-mail de cursos
+
+Bancos e Finanças → contas bancárias, cartões, investimentos, PayPal, Pix
 
 Redes Sociais → Facebook, Instagram, Twitter, TikTok, etc.
 
-Jogos → Steam, PlayStation, Xbox, Nintendo, jogos mobile.
+Jogos → Steam, PlayStation, Xbox, Nintendo, jogos mobile
 
 Streaming e Assinaturas → Netflix, Spotify, Amazon Prime, Disney+, etc.
 
 Compras Online → Mercado Livre, Shopee, Amazon, Shein, etc.
 
-Serviços → conta de luz, água, telefone, internet, provedores.
+Serviços → conta de luz, água, telefone, internet, provedores
 
-Saúde → planos de saúde, apps de treino, farmácias.
+Saúde → planos de saúde, apps de treino, farmácias
 
-Segurança → autenticadores, cofres de senha, backups.
-
-
-
----
-
-3. Visualização da Senha
-
-Ao clicar em uma senha já cadastrada, abrirá uma tela de detalhes com todas as informações salvas.
-
-Nesta tela, haverá a opção de copiar a senha.
+Segurança → autenticadores, cofres de senha, backups
 
 
 
 ---
 
-📅 Próximos Passos
+📜 Visualização de Senhas
 
-Implementar tela de registro inicial.
+[ ] Ao clicar em uma senha cadastrada, abrir tela de detalhes mostrando todas as informações.
 
-Criar função de organização automática por categorias.
+[ ] Adicionar botão de copiar senha na tela de detalhes.
 
-Adicionar tela de detalhes da senha com opção de cópia.
 
-Ajustar formatação automática para inicial maiúscula nos campos.
 
-Substituir botão de copiar senha por mostrar/ocultar no momento do cadastro.
+---
 
+🗂 Prioridade de Implementação
+
+1. Tela de apresentação e registro inicial.
+
+
+2. Configurações + modo confidencial com mudança de tema.
+
+
+3. Organização automática por categorias.
+
+
+4. Tela de detalhes com botão de copiar senha.
+
+
+
+
+---
