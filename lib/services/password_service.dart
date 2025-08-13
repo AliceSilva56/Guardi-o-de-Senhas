@@ -10,6 +10,9 @@ class PasswordService {
   static const String settingsBoxName = 'guardiao_settings';
   static const String masterKey = 'master_password_hash';
   static const String confidentialModeKey = 'confidential_mode_enabled';
+  static const String confidentialPasswordKey = 'confidential_password_hash';
+
+  static String? _masterPassword;
 
   /// Inicializa o Hive - chame no main()
   static Future<void> init() async {
@@ -20,10 +23,11 @@ class PasswordService {
 
   // ---------------- Master Password ----------------
   /// Define senha mestra (armazenada como hash básico; para produção usar PBKDF2/Argon2)
-  static Future<void> setMasterPassword(String plain) async {
+  static void setMasterPassword(String plain) {
+    _masterPassword = plain;
     final box = Hive.box(settingsBoxName);
     final hash = sha256.convert(utf8.encode(plain)).toString();
-    await box.put(masterKey, hash);
+    box.put(masterKey, hash);
   }
 
   /// Verifica senha mestra
@@ -50,6 +54,29 @@ class PasswordService {
   static Future<void> setConfidentialModeEnabled(bool enabled) async {
     final box = Hive.box(settingsBoxName);
     await box.put(confidentialModeKey, enabled);
+  }
+
+  // ---------------- Confidential Password ----------------
+  /// Define senha do modo confidencial
+  static void setConfidentialPassword(String plain) {
+    final box = Hive.box(settingsBoxName);
+    final hash = sha256.convert(utf8.encode(plain)).toString();
+    box.put(confidentialPasswordKey, hash);
+  }
+
+  /// Verifica senha do modo confidencial
+  static bool verifyConfidentialPassword(String plain) {
+    final box = Hive.box(settingsBoxName);
+    final saved = box.get(confidentialPasswordKey);
+    if (saved == null) return false;
+    final hash = sha256.convert(utf8.encode(plain)).toString();
+    return saved == hash;
+  }
+
+  /// Checa se já existe senha do modo confidencial
+  static bool hasConfidentialPassword() {
+    final box = Hive.box(settingsBoxName);
+    return box.containsKey(confidentialPasswordKey);
   }
 
   // ---------------- CRUD ----------------
