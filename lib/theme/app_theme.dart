@@ -1,3 +1,8 @@
+// Arquivo app_theme.dart para o tema do Guardião de Senhas
+// Este arquivo define os temas escuro e claro do aplicativo, com uma estética futurista e tecnológica, utilizando cores neon e uma fonte de estilo futurista.
+// O tema escuro é inspirado em tecnologia futurista, enquanto o tema claro mantém a mesma paleta de cores, mas com um fundo claro.
+// Ambos os temas são aplicados ao MaterialApp do Flutter, permitindo uma experiência de usuário consistente e atraente.
+// As cores e fontes foram escolhidas para criar uma atmosfera de segurança e modernidade, refletindo a proposta do aplicativo como um guardião de senhas.
 import 'package:flutter/material.dart';
 
 class AppTheme {

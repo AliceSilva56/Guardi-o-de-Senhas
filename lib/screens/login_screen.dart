@@ -1,3 +1,5 @@
+// Arquivo login_screen.dart para a tela de login do Guardião de Senhas
+// Esta tela permite ao usuário inserir a senha mestra para acessar o aplicativo.
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 

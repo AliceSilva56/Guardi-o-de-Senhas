@@ -1,3 +1,5 @@
+//Arquvio password_model.dart para o modelo de senha do Guardião de Senhas
+// Este arquivo define a estrutura de dados para armazenar informações de senhas, incluindo site, nome de usuário, senha, categoria e notas adicionais.
 class PasswordModel {
   final String id;
   final String siteName;

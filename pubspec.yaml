@@ -15,6 +15,7 @@ dependencies:
   local_auth: ^2.1.4
   crypto: ^3.0.6
   provider: ^6.1.5
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
@@ -23,9 +24,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # assets:
-  #  - 'assets/backgrounds/bg1.png'
-  #  - 'assets/backgrounds/bg2.png'
-  #  - 'assets/backgrounds/bg3.png'
-  #  - 'assets/backgrounds/bg4.png'
-  #  - 'assets/backgrounds/bg5.png'
+  assets:
+    - 'assets/backgrounds/bg1.png'
+    - 'assets/backgrounds/bg2.png'
+    - 'assets/backgrounds/bg3.png'
+    - 'assets/backgrounds/bg4.png'
+    - 'assets/backgrounds/bg5.png'

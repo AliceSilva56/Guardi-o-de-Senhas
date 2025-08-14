@@ -1,3 +1,5 @@
+// Arquivo category_screen.dart para a tela de categorias do Guardião de Senhas
+// Esta tela exibe as senhas de uma categoria específica, permitindo adicionar, editar e excluir senhas.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';

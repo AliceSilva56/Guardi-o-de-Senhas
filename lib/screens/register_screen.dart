@@ -1,3 +1,5 @@
+// Arquivo register_screen.dart para a tela de registro do Guardião de Senhas
+// Esta tela permite ao usuário criar um novo cadastro com nome, e-mail e senha mestra
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 

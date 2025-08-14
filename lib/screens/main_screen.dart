@@ -1,3 +1,5 @@
+// Arquivo main_screen.dart para a tela principal do Guardião de Senhas
+// Esta tela exibe as "pastas" (categorias) que contêm as senhas, permitindo ao usuário navegar entre elas.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';

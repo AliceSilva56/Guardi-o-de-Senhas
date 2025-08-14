@@ -1,3 +1,5 @@
+// Arquivo main.dart para o aplicativo Guardião de Senhas
+// Este arquivo inicializa o Hive, configura o tema do aplicativo e define as rotas principais
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';

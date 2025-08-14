@@ -1,3 +1,6 @@
+//Arquivo settings_screen para Configurações do Guardião de Senhas
+// Este arquivo contém as configurações do aplicativo, incluindo opções de segurança, personalização e dados
+
 import 'package:flutter/material.dart';
 import 'package:guardiao_de_senhas/main.dart';
 import 'package:provider/provider.dart';
@@ -103,7 +106,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showThemeDialog(BuildContext context) async {
-    final themeOptions = ['Claro', 'Escuro', 'Sistema'];
+    final themeOptions = ['꥟ Claro', '⏾ Escuro', '⚙️ Sistema'];
     final themeController = Provider.of<ThemeController>(context, listen: false);
     String currentTheme = themeController.themeModeName;
     await showDialog(
