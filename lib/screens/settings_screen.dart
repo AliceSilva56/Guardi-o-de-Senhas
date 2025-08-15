@@ -1,10 +1,11 @@
 //Arquivo settings_screen para Configurações do Guardião de Senhas
 // Este arquivo contém as configurações do aplicativo, incluindo opções de segurança, personalização e dados
 
+//Arquivo settings_screen.dart para Configurações do Guardião de Senhas
 import 'package:flutter/material.dart';
-import 'package:guardiao_de_senhas/main.dart';
 import 'package:provider/provider.dart';
 import '../services/password_service.dart';
+import '../main.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -50,12 +51,6 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Autenticação biométrica'),
             subtitle: const Text('Impressão digital ou reconhecimento facial'),
             onTap: () {}, // implementar biometria
-          ),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('Perguntas de segurança'),
-            subtitle: const Text('Recuperação de conta sem e-mail'),
-            onTap: () {}, // implementar perguntas de segurança
           ),
           const Divider(),
 
@@ -105,6 +100,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  // ======================= TEMA ========================
   void _showThemeDialog(BuildContext context) async {
     final themeOptions = ['꥟ Claro', '⏾ Escuro', '⚙️ Sistema'];
     final themeController = Provider.of<ThemeController>(context, listen: false);
@@ -131,9 +127,11 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  // ======================= BACKGROUND ========================
   void _showBackgroundDialog(BuildContext context) async {
     final images = await BackgroundController.getAvailableImages();
-    String? currentImage = BackgroundController.of(context).backgroundImage;
+    String? currentImage = BackgroundController.backgroundImage; // leitura direta
+
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -146,7 +144,7 @@ class SettingsScreen extends StatelessWidget {
               final isSelected = imgPath == currentImage;
               return GestureDetector(
                 onTap: () {
-                  BackgroundController.of(context).setBackgroundImage(imgPath);
+                  BackgroundController.setBackground(imgPath); // chamada direta
                   Navigator.pop(context);
                 },
                 child: Stack(
@@ -171,7 +169,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // Métodos auxiliares
+  // ======================= SENHA ========================
   void _configureMasterPassword(BuildContext context) async {
     final controller = TextEditingController();
     final confirmController = TextEditingController();
@@ -256,23 +254,19 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  // ======================= BACKUP ========================
   void _exportBackup(BuildContext context) async {
-    // Implemente exportação real conforme sua necessidade
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup exportado')));
   }
 
   void _importBackup(BuildContext context) async {
-    // Implemente importação real conforme sua necessidade
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup importado')));
   }
 
-  String _getLastBackupInfo() {
-    // Implemente busca real da data do último backup
-    return 'Nunca realizado';
-  }
+  String _getLastBackupInfo() => 'Nunca realizado';
 }
 
-// Tela de perfil (exemplo simples)
+// ======================= PERFIL ========================
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -285,7 +279,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController apelidoController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
 
-  // Emojis disponíveis
   final List<String> emojis = ['😀', '🦸‍♂️', '👩‍💻', '🧑‍🎨', '🦄'];
   String selectedEmoji = '😀';
 
@@ -297,7 +290,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Escolha de emoji
             Text('Escolha seu avatar:', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Row(
@@ -316,37 +308,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     padding: const EdgeInsets.all(8),
-                    child: Text(
-                      emoji,
-                      style: TextStyle(fontSize: 36),
-                    ),
+                    child: Text(emoji, style: const TextStyle(fontSize: 36)),
                   ),
                 );
               }).toList(),
             ),
             const SizedBox(height: 24),
-            TextField(
-              controller: nomeController,
-              decoration: const InputDecoration(labelText: 'Nome do usuário'),
-            ),
+            TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome do usuário')),
             const SizedBox(height: 8),
-            TextField(
-              controller: apelidoController,
-              decoration: const InputDecoration(labelText: 'Apelido'),
-            ),
+            TextField(controller: apelidoController, decoration: const InputDecoration(labelText: 'Apelido')),
             const SizedBox(height: 8),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'E-mail de recuperação'),
-              keyboardType: TextInputType.emailAddress,
-            ),
+            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'E-mail de recuperação'), keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                // Salvar dados do perfil (implemente persistência se desejar)
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Perfil salvo!')),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perfil salvo!')));
                 Navigator.pop(context);
               },
               child: const Text('Salvar'),

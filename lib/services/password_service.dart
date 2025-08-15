@@ -1,5 +1,6 @@
 // Arquivo password_service.dart para o serviço de gerenciamento de senhas do Guardião de Senhas
 // Este serviço utiliza o Hive para armazenar senhas de forma segura, incluindo funcionalidades para backup e restauração, geração de senhas, verificação de força de senha e modo confidencial.
+
 import 'dart:convert';
 import 'dart:math';
 import 'package:hive/hive.dart';

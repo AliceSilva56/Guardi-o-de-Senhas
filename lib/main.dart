@@ -1,14 +1,13 @@
-// Arquivo main.dart para o aplicativo Guardião de Senhas
-// Este arquivo inicializa o Hive, configura o tema do aplicativo e define as rotas principais
+// main.dart - Guardião de Senhas
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/backup_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/category_screen.dart'; // Import da tela de categorias
+import 'screens/category_screen.dart';
 import 'services/password_service.dart';
 
 void main() async {
@@ -17,15 +16,14 @@ void main() async {
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeController(),
-      child: BackgroundController(
-        child: const MyApp(),
-      ),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeController>(
@@ -35,36 +33,62 @@ class MyApp extends StatelessWidget {
           themeMode: themeController.themeMode,
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
-          home: Stack(
-            children: [
-              if (BackgroundController.of(context).backgroundImage != null)
-                Opacity(
-                  opacity: 0.3,
-                  child: Image.asset(
-                    BackgroundController.of(context).backgroundImage!,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                  ),
-                ),
-              MainScreen(),
-            ],
-          ),
           debugShowCheckedModeBanner: false,
-          initialRoute: '/login', // Rota inicial
-          routes: {
-            '/login': (context) => const LoginScreen(),
-            '/register': (context) => const RegisterScreen(),
-            '/main': (context) => const MainScreen(),
-            '/backup': (context) => const BackupScreen(),
-            '/category': (context) {
-              // Recebe o argumento ao chamar Navigator.pushNamed
-              final args = ModalRoute.of(context)!.settings.arguments as String;
-              return CategoryScreen(category: args);
-            },
+          initialRoute: '/login',
+          onGenerateRoute: (settings) {
+            // Rotas com suporte para backgrounds
+            Widget page;
+            switch (settings.name) {
+              case '/login':
+                page = const LoginScreen();
+                break;
+              case '/register':
+                page = const RegisterScreen();
+                break;
+              case '/main':
+                page = const MainScreen();
+                break;
+              case '/backup':
+                page = const BackupScreen();
+                break;
+              case '/category':
+                final args = settings.arguments as String;
+                page = CategoryScreen(category: args);
+                break;
+              default:
+                page = const LoginScreen();
+            }
+            return MaterialPageRoute(
+              builder: (context) => BackgroundWrapper(child: page),
+            );
           },
         );
       },
+    );
+  }
+}
+
+// Wrapper que aplica o background a qualquer tela
+class BackgroundWrapper extends StatelessWidget {
+  final Widget child;
+  const BackgroundWrapper({required this.child, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        if (BackgroundController.backgroundImage != null)
+          Opacity(
+            opacity: 0.3,
+            child: Image.asset(
+              BackgroundController.backgroundImage!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+        child,
+      ],
     );
   }
 }
@@ -95,28 +119,15 @@ class ThemeController extends ChangeNotifier {
   }
 }
 
-class BackgroundController extends InheritedWidget {
-  final String? backgroundImage;
-  final void Function(String?) setBackgroundImage;
+// Controlador de background global
+class BackgroundController {
+  static String? backgroundImage;
 
-  BackgroundController({
-    required Widget child,
-  })  : backgroundImage = _backgroundImage,
-        setBackgroundImage = _setBackgroundImage,
-        super(child: child);
-
-  static BackgroundController of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<BackgroundController>()!;
-
-  static String? _backgroundImage;
-
-  static void _setBackgroundImage(String? img) {
-    _backgroundImage = img;
+  static void setBackground(String? img) {
+    backgroundImage = img;
   }
 
   static Future<List<String>> getAvailableImages() async {
-    // Retorne os caminhos das imagens da pasta assets/backgrounds/
-    // Exemplo fixo, substitua pelos nomes reais dos arquivos
     return [
       'assets/backgrounds/bg1.png',
       'assets/backgrounds/bg2.png',
@@ -124,10 +135,5 @@ class BackgroundController extends InheritedWidget {
       'assets/backgrounds/bg4.png',
       'assets/backgrounds/bg5.png',
     ];
-  }
-
-  @override
-  bool updateShouldNotify(BackgroundController oldWidget) {
-    return backgroundImage != oldWidget.backgroundImage;
   }
 }

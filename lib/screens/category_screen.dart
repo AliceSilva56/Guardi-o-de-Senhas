@@ -1,13 +1,12 @@
 // Arquivo category_screen.dart para a tela de categorias do Guardião de Senhas
 // Esta tela exibe as senhas de uma categoria específica, permitindo adicionar, editar e excluir senhas.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import '../models/password_model.dart';
 import '../services/password_service.dart';
 
-/// Tela que mostra apenas as senhas de UMA categoria (pasta).
-/// Recebe o nome da categoria via construtor.
 class CategoryScreen extends StatefulWidget {
   final String category;
   const CategoryScreen({super.key, required this.category});
@@ -19,7 +18,6 @@ class CategoryScreen extends StatefulWidget {
 class _CategoryScreenState extends State<CategoryScreen> {
   List<PasswordModel> categoryPasswords = [];
 
-  // mesma lista de descrições (pode ser extraída para um arquivo comum se preferir)
   final Map<String, String> categoryInfo = {
     'Pessoal': 'Documentos, cadastros gerais, compras online',
     'Profissional': 'Email corporativo, sistemas de trabalho, intranet, cursos',
@@ -39,13 +37,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
     loadCategoryPasswords();
   }
 
-  /// Carrega só as senhas desta categoria.
   void loadCategoryPasswords() {
     categoryPasswords = PasswordService.getByCategory(widget.category, includeConfidential: true);
     setState(() {});
   }
 
-  /// Diálogo para adicionar senha já com categoria fixa (campo de categoria bloqueado).
   Future<void> addPasswordInCategory({PasswordModel? editing}) async {
     final siteController = TextEditingController(text: editing?.siteName ?? '');
     final userController = TextEditingController(text: editing?.username ?? '');
@@ -56,6 +52,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
     bool obscurePassword = true;
     String strengthText = '';
     String strengthLevel = '';
+
+    String? errorUser;
+    String? errorPassword;
 
     void updateStrength(String pwd, void Function(void Function()) innerSetState) {
       final res = PasswordService.calculatePasswordStrength(pwd);
@@ -72,20 +71,22 @@ class _CategoryScreenState extends State<CategoryScreen> {
           content: SingleChildScrollView(
             child: Column(
               children: [
-                // Site/Serviço com capitalização automática
                 TextField(
                   controller: siteController,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(labelText: 'Site/Serviço'),
                 ),
                 const SizedBox(height: 8),
-                // Usuário/Email
+
                 TextField(
                   controller: userController,
-                  decoration: const InputDecoration(labelText: 'Usuário/Email'),
+                  decoration: InputDecoration(
+                    labelText: 'Usuário/Email',
+                    errorText: errorUser,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                // Senha com gerar + mostrar/ocultar
+
                 Row(
                   children: [
                     Expanded(
@@ -93,7 +94,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         controller: passController,
                         obscureText: obscurePassword,
                         onChanged: (v) => updateStrength(v, innerSetState),
-                        decoration: const InputDecoration(labelText: 'Senha'),
+                        decoration: InputDecoration(
+                          labelText: 'Senha',
+                          errorText: errorPassword,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -116,7 +120,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Indicador de força (aparece enquanto digita)
                 if (passController.text.isNotEmpty || strengthText.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +138,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   ),
                 const SizedBox(height: 8),
 
-                // Categoria BLOQUEADA — estamos dentro de uma pasta específica.
                 TextFormField(
                   initialValue: widget.category,
                   readOnly: true,
@@ -143,7 +145,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Notas com capitalização
                 TextField(
                   controller: notesController,
                   textCapitalization: TextCapitalization.sentences,
@@ -152,7 +153,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Checkbox confidencial
                 Row(
                   children: [
                     Checkbox(
@@ -171,13 +171,23 @@ class _CategoryScreenState extends State<CategoryScreen> {
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
+                // Validação
+                innerSetState(() {
+                  errorUser = userController.text.trim().isEmpty ? 'Campo obrigatório' : null;
+                  errorPassword = passController.text.trim().isEmpty ? 'Campo obrigatório' : null;
+                });
+
+                if (errorUser != null || errorPassword != null) {
+                  return;
+                }
+
                 final id = editing?.id ?? const Uuid().v4();
                 final model = PasswordModel(
                   id: id,
                   siteName: siteController.text,
                   username: userController.text,
                   password: passController.text,
-                  category: widget.category, // categoria fixa
+                  category: widget.category,
                   notes: notesController.text,
                   confidential: isConfidential,
                   createdAt: editing?.createdAt ?? DateTime.now(),
@@ -201,7 +211,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
-  /// Confirma e deleta
   void confirmDelete(String id) {
     showDialog(
       context: context,
@@ -223,7 +232,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
-  /// Mostra o detalhe da senha: em vez de copiar direto, abrimos um diálogo com botão mostrar/ocultar.
   void showPasswordDetail(PasswordModel p) {
     showDialog(
       context: context,
@@ -335,7 +343,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.category), // apenas o título da pasta aqui
+        title: Text(widget.category),
       ),
       body: RefreshIndicator(
         onRefresh: () async => loadCategoryPasswords(),
@@ -360,7 +368,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => confirmDelete(p.id)),
                       ],
                     ),
-                    onTap: () => showPasswordDetail(p), // abre detalhe com mostrar/ocultar e copiar
+                    onTap: () => showPasswordDetail(p),
                   );
                 },
               ),

@@ -1,5 +1,6 @@
 // Arquivo main_screen.dart para a tela principal do Guardião de Senhas
 // Esta tela exibe as "pastas" (categorias) que contêm as senhas, permitindo ao usuário navegar entre elas.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
@@ -7,9 +8,9 @@ import '../models/password_model.dart';
 import '../services/password_service.dart';
 import 'category_screen.dart';
 import 'settings_screen.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_theme_confidential.dart';
 
-/// Tela principal que agora mostra apenas as "pastas" (categorias).
-/// As pastas só aparecem se houver pelo menos 1 senha naquela categoria.
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
   @override
@@ -21,8 +22,6 @@ class _MainScreenState extends State<MainScreen> {
   String searchQuery = '';
   bool showConfidential = false;
 
-  // mapa com categorias pré-definidas e suas descrições.
-  // essas descrições serão exibidas SOMENTE no diálogo de adicionar/editar senha.
   final Map<String, String> categoryInfo = {
     'Pessoal': 'Documentos, cadastros gerais, compras online',
     'Profissional': 'Email corporativo, sistemas de trabalho, intranet, cursos',
@@ -43,14 +42,15 @@ class _MainScreenState extends State<MainScreen> {
     showConfidential = false;
   }
 
-  /// Carrega todas as senhas (filtradas por confidencial conforme flag).
   void loadPasswords() {
-    passwords = PasswordService.searchPasswords(searchQuery, includeConfidential: showConfidential);
+    passwords = PasswordService.searchPasswords(
+      searchQuery,
+      includeConfidential: showConfidential,
+    );
     setState(() {});
   }
 
-  /// Alterna visibilidade das senhas confidenciais
-  void toggleShowConfidential() async {
+  Future<void> toggleShowConfidential() async {
     if (!showConfidential) {
       final result = await _askMasterPassword();
       if (!result) return;
@@ -61,21 +61,42 @@ class _MainScreenState extends State<MainScreen> {
     loadPasswords();
   }
 
-  /// Pede a senha mestra e retorna true se ok.
   Future<bool> _askMasterPassword() async {
     final controller = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+
     final res = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Verificar Senha Mestra'),
+        backgroundColor: isDark ? AppColors.darkAppBar : AppColors.lightAppBar,
+        title: Text('Verificar Senha Mestra', style: TextStyle(color: textColor)),
         content: TextField(
           controller: controller,
           obscureText: true,
-          decoration: const InputDecoration(labelText: 'Senha Mestra'),
+          style: TextStyle(color: textColor),
+          decoration: InputDecoration(
+            labelText: 'Senha Mestra',
+            labelStyle: TextStyle(color: secondaryTextColor),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: AppColors.inputBorder),
+            ),
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancelar', style: TextStyle(color: textColor)),
+          ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.buttonPrimary,
+              foregroundColor: AppColors.buttonText,
+            ),
             onPressed: () {
               final ok = PasswordService.verifyMasterPassword(controller.text.trim());
               Navigator.pop(context, ok);
@@ -88,78 +109,122 @@ class _MainScreenState extends State<MainScreen> {
     return res ?? false;
   }
 
-  /// Retorna o conjunto de categorias existentes (apenas categorias que já possuem senhas).
-  /// Isso garante que "pastas" só aparecem depois que uma senha for criada nessa categoria.
-  Set<String> _existingCategories() {
-    return passwords.map((p) => p.category).toSet();
+  Set<String> _existingCategories() => passwords.map((p) => p.category).toSet();
+  int _countForCategory(String category) => passwords.where((p) => p.category == category).length;
+
+  void openCategory(String category) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CategoryScreen(category: category)),
+    ).then((_) => loadPasswords());
   }
 
-  /// Conta quantas senhas existem numa categoria.
-  int _countForCategory(String category) {
-    return passwords.where((p) => p.category == category).length;
+  void confirmDelete(String id) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkAppBar : AppColors.lightAppBar,
+        title: Text('Excluir', style: TextStyle(color: textColor)),
+        content: Text('Confirma exclusão?', style: TextStyle(color: secondaryTextColor)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: textColor))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.buttonPrimary,
+              foregroundColor: AppColors.buttonText,
+            ),
+            onPressed: () async {
+              await PasswordService.deletePassword(id);
+              loadPasswords();
+              Navigator.pop(context);
+            },
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
   }
 
-  /// Diálogo para adicionar senha (usado também pela CategoryScreen).
-  /// Aqui incluímos seleção de categoria com descrição exibida quando selecionada.
   Future<void> addPasswordDialog({PasswordModel? editing, String? forceCategory}) async {
     final siteController = TextEditingController(text: editing?.siteName ?? '');
     final userController = TextEditingController(text: editing?.username ?? '');
     final passController = TextEditingController(text: editing?.password ?? '');
-    // se chamado a partir de uma categoria específica, preenche e bloqueia
     final categoryController = TextEditingController(text: editing?.category ?? (forceCategory ?? 'Pessoal'));
     final notesController = TextEditingController(text: editing?.notes ?? '');
     bool isConfidential = editing?.confidential ?? false;
 
-    bool obscurePassword = true; // controla mostrar/ocultar senha no diálogo
+    bool obscurePassword = true;
     String strengthText = '';
     String strengthLevel = '';
 
-    // função que calcula força e atualiza variáveis (vai chamar setState do StatefulBuilder)
+    String? userError;
+    String? passError;
+    String? categoryError;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+
     void updateStrength(String pwd, void Function(void Function()) innerSetState) {
       final res = PasswordService.calculatePasswordStrength(pwd);
       strengthText = res['text']!;
       strengthLevel = res['level']!;
-      innerSetState(() {}); // atualiza apenas o diálogo
+      innerSetState(() {});
     }
 
     await showDialog(
       context: context,
       builder: (_) => StatefulBuilder(builder: (context, innerSetState) {
-        // lista de categorias para o dropdown: usamos as categorias pré-definidas
-        // + as categorias já existentes (para garantir cobertura).
         final existing = _existingCategories().toList();
         final predefined = categoryInfo.keys.toList();
-        // unir mantendo ordem: predefined primeiro, depois extras que não estão em predefined
         final union = [
           ...predefined,
           ...existing.where((c) => !predefined.contains(c)).toList(),
           'Outra...'
         ];
 
-        // se "Outra..." for selecionado o usuário pode digitar nova categoria
-        final isCustomCategory = !categoryInfo.containsKey(categoryController.text) && categoryController.text != 'Personal';
+        String getCategoryDescription() {
+          return categoryInfo[categoryController.text] ?? '';
+        }
 
         return AlertDialog(
-          title: Text(editing == null ? 'Adicionar Senha' : 'Editar Senha'),
+          backgroundColor: isDark ? AppColors.darkAppBar : AppColors.lightAppBar,
+          title: Text(editing == null ? 'Adicionar Senha' : 'Editar Senha', style: TextStyle(color: textColor)),
           content: SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Site/Serviço (começa com maiúscula automaticamente)
                 TextField(
                   controller: siteController,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(labelText: 'Site/Serviço'),
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'Site/Serviço',
+                    labelStyle: TextStyle(color: secondaryTextColor),
+                    filled: true,
+                    fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.inputBorder)),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                  ),
                 ),
                 const SizedBox(height: 8),
-
-                // Usuário/Email
                 TextField(
                   controller: userController,
-                  decoration: const InputDecoration(labelText: 'Usuário/Email'),
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'Usuário/Email',
+                    errorText: userError,
+                    filled: true,
+                    fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.inputBorder)),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                  ),
                 ),
                 const SizedBox(height: 8),
-
-                // Linha da senha: campo + gerar + mostrar/ocultar
                 Row(
                   children: [
                     Expanded(
@@ -167,11 +232,19 @@ class _MainScreenState extends State<MainScreen> {
                         controller: passController,
                         obscureText: obscurePassword,
                         onChanged: (v) => updateStrength(v, innerSetState),
-                        decoration: const InputDecoration(labelText: 'Senha'),
+                        style: TextStyle(color: textColor),
+                        decoration: InputDecoration(
+                          labelText: 'Senha',
+                          errorText: passError,
+                          filled: true,
+                          fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.inputBorder)),
+                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                        ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.shuffle),
+                      icon: Icon(Icons.shuffle, color: AppColors.buttonPrimary),
                       tooltip: 'Gerar Senha',
                       onPressed: () {
                         final gen = PasswordService.generatePassword(length: 16);
@@ -180,44 +253,37 @@ class _MainScreenState extends State<MainScreen> {
                       },
                     ),
                     IconButton(
-                      icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off),
+                      icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off, color: AppColors.buttonPrimary),
                       tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
-                      onPressed: () {
-                        innerSetState(() {
-                          obscurePassword = !obscurePassword;
-                        });
-                      },
+                      onPressed: () => innerSetState(() => obscurePassword = !obscurePassword),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-
-                // Indicador de força - aparece sempre que o campo não estiver vazio
                 if (passController.text.isNotEmpty || strengthText.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Força: ${strengthText.isEmpty ? PasswordService.calculatePasswordStrength(passController.text)['text'] : strengthText}'),
+                      Text('Força: ${strengthText.isEmpty ? PasswordService.calculatePasswordStrength(passController.text)['text'] : strengthText}',
+                          style: TextStyle(color: secondaryTextColor)),
                       const SizedBox(height: 4),
                       LinearProgressIndicator(
-                        value: (PasswordService.calculatePasswordStrength(passController.text)['level'] == 'weak')
+                        value: (strengthLevel == 'weak')
                             ? 0.33
-                            : (PasswordService.calculatePasswordStrength(passController.text)['level'] == 'medium')
+                            : (strengthLevel == 'medium')
                                 ? 0.66
                                 : 1.0,
                         minHeight: 6,
+                        color: AppColors.primary,
+                        backgroundColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
                       ),
                     ],
                   ),
                 const SizedBox(height: 8),
-
-                // Dropdown de categorias: mostra descrição quando uma categoria pré-definida for selecionada.
-                // Se forceCategory foi passada (vindo do CategoryScreen), deixamos bloqueado.
                 if (forceCategory == null) ...[
-                  // Campo para escolher categoria (dropdown)
                   DropdownButtonFormField<String>(
                     value: union.contains(categoryController.text) ? categoryController.text : union.first,
-                    items: union.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    items: union.map((c) => DropdownMenuItem(value: c, child: Text(c, style: TextStyle(color: textColor)))).toList(),
                     onChanged: (val) {
                       if (val == null) return;
                       innerSetState(() {
@@ -228,68 +294,84 @@ class _MainScreenState extends State<MainScreen> {
                         }
                       });
                     },
-                    decoration: const InputDecoration(labelText: 'Categoria'),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Se usuário escolheu uma categoria pré-definida, mostramos a descrição.
-                  if (categoryController.text.isNotEmpty && categoryInfo.containsKey(categoryController.text))
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Descrição: ${categoryInfo[categoryController.text]}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        const SizedBox(height: 8),
-                      ],
+                    decoration: InputDecoration(
+                      labelText: 'Categoria',
+                      errorText: categoryError,
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.inputBorder)),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
                     ),
-
-                  // Se escolheu "Outra..." ou digitou algo que não é pré-definido, mostrar um campo de texto
-                  if (categoryController.text.isEmpty)
-                    TextField(
-                      controller: categoryController,
-                      textCapitalization: TextCapitalization.sentences, // começa com maiúscula
-                      decoration: const InputDecoration(labelText: 'Nova categoria'),
+                    dropdownColor: isDark ? AppColors.darkAppBar : AppColors.lightAppBar,
+                  ),
+                  const SizedBox(height: 4),
+                  // ---- AQUI MOSTRA A DESCRIÇÃO DA CATEGORIA ----
+                  if (categoryController.text.isNotEmpty)
+                    Text(
+                      getCategoryDescription(),
+                      style: TextStyle(
+                        color: secondaryTextColor,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 13,
+                      ),
                     ),
                 ] else ...[
-                  // Se estamos adicionando a partir de uma CategoryScreen, bloqueamos o campo
                   TextField(
                     controller: categoryController,
                     readOnly: true,
-                    decoration: const InputDecoration(labelText: 'Categoria'),
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      labelText: 'Categoria',
+                      errorText: categoryError,
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.inputBorder)),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                    ),
                   ),
                 ],
-
-                const SizedBox(height: 8),
-
-                // Notas (capitalização de frases)
                 TextField(
                   controller: notesController,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(labelText: 'Notas'),
+                  style: TextStyle(color: textColor),
+                  decoration: InputDecoration(
+                    labelText: 'Notas',
+                    filled: true,
+                    fillColor: isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground,
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.inputBorder)),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.primary, width: 2)),
+                  ),
                   maxLines: 3,
                 ),
                 const SizedBox(height: 8),
-
-                // Checkbox de confidencialidade (mantido)
                 Row(
                   children: [
                     Checkbox(
                       value: isConfidential,
-                      onChanged: (v) {
-                        innerSetState(() => isConfidential = v ?? false);
-                      },
+                      activeColor: AppColors.primary,
+                      onChanged: (v) => innerSetState(() => isConfidential = v ?? false),
                     ),
-                    const Expanded(child: Text('Marcar como confidencial (requer senha para visualizar)')),
+                    Expanded(
+                        child: Text('Marcar como confidencial (requer senha para visualizar)',
+                            style: TextStyle(color: secondaryTextColor))),
                   ],
-                )
+                ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: textColor))),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonPrimary, foregroundColor: AppColors.buttonText),
               onPressed: () async {
-                // normalizar: se o campo estiver vazio, usar "Personal" por padrão
-                final chosenCategory = categoryController.text.isEmpty ? 'Personal' : categoryController.text;
+                innerSetState(() {
+                  userError = userController.text.trim().isEmpty ? 'Campo obrigatório' : null;
+                  passError = passController.text.trim().isEmpty ? 'Campo obrigatório' : null;
+                  categoryError = categoryController.text.trim().isEmpty ? 'Campo obrigatório' : null;
+                });
+                if (userError != null || passError != null || categoryError != null) return;
+
+                final chosenCategory = categoryController.text.isEmpty ? 'Pessoal' : categoryController.text;
                 final id = editing?.id ?? const Uuid().v4();
                 final model = PasswordModel(
                   id: id,
@@ -320,73 +402,40 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  /// Abre CategoryScreen com a categoria escolhida
-  void openCategory(String category) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => CategoryScreen(category: category)),
-    ).then((_) {
-      // quando voltar da tela de categoria, recarrega a lista
-      loadPasswords();
-    });
-  }
-
-  /// Exclui senha com confirmação
-  void confirmDelete(String id) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Excluir'),
-        content: const Text('Confirma exclusão?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              await PasswordService.deletePassword(id);
-              loadPasswords();
-              Navigator.pop(context);
-            },
-            child: const Text('Excluir'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final list = passwords;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+
     final existingCategories = _existingCategories().toList()..sort();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Guardião de Senhas'),
+        title: Text('Guardião de Senhas', style: TextStyle(color: textColor)),
         actions: [
           IconButton(
             icon: Icon(showConfidential ? Icons.visibility : Icons.visibility_off),
             tooltip: showConfidential ? 'Ocultar confidenciais' : 'Mostrar confidenciais',
+            color: textColor,
             onPressed: toggleShowConfidential,
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-            ),
+            color: textColor,
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen())),
           ),
         ],
       ),
-
-      // corpo: mostra apenas as pastas (categorias que já existem)
       body: RefreshIndicator(
         onRefresh: () async => loadPasswords(),
         child: existingCategories.isEmpty
             ? ListView(
-                children: const [
+                children: [
                   Center(
                     child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Text('Nenhuma pasta ainda. Adicione senhas para criar pastas.'),
+                      padding: const EdgeInsets.all(40),
+                      child: Text('Nenhuma pasta ainda. Adicione senhas para criar pastas.', style: TextStyle(color: secondaryTextColor)),
                     ),
                   )
                 ],
@@ -396,22 +445,22 @@ class _MainScreenState extends State<MainScreen> {
                 itemBuilder: (context, i) {
                   final cat = existingCategories[i];
                   return ListTile(
-                    leading: const Icon(Icons.folder),
-                    title: Text(cat),
-                    // mostra número de senhas na pasta
+                    leading: Icon(Icons.folder, color: textColor),
+                    title: Text(cat, style: TextStyle(color: textColor)),
                     trailing: CircleAvatar(
                       radius: 14,
-                      child: Text(_countForCategory(cat).toString()),
+                      backgroundColor: AppColors.primary,
+                      child: Text(_countForCategory(cat).toString(), style: const TextStyle(color: Colors.white)),
                     ),
-                    onTap: () => openCategory(cat), // abre CategoryScreen
+                    onTap: () => openCategory(cat),
                   );
                 },
               ),
       ),
-
-      // floating action: abre diálogo de adicionar sem forçar categoria (o usuário escolhe)
       floatingActionButton: FloatingActionButton(
         onPressed: () => addPasswordDialog(),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
     );
