@@ -1,61 +1,70 @@
-📌 Guardião de Senhas – Roadmap de Atualizações
+📌 Guardião de Senhas – Roadmap de Correções e Novas Funcionalidades
 
-Última atualização: Acréscimo da tela de Configurações e demais funcionalidades iniciais.
-
-
----
-
-🆕 Próximas Atualizações
-
-1️⃣ Tela de Apresentação
-
-[ ] Criar tela de apresentação (splash screen) com logo e animação de entrada.
-
-[ ] Exibir tela de registro no primeiro contato com o aplicativo.
-
+Última revisão: Organização das cores do app
 
 
 ---
 
-2️⃣ main_screen.dart – Modo Confidencial
+🐞 Correções Necessárias
 
-[ ] Implementar modo confidencial:
+[ ] Verificar bug na inicialização: Quando o app inicia, ele parece entrar duas vezes na main_screen.dart. Ao clicar na seta, ele sai como se tivesse sido carregado em duplicidade.
 
-Alterar completamente a cor e o estilo visual do app.
+Investigar se o problema está no Navigator, rotas ou no ciclo de vida do widget.
 
-Mostrar apenas senhas confidenciais.
-
-
-[ ] Adicionar botão/menu para entrar e sair do modo confidencial.
 
 
 
 ---
 
-3️⃣ Personalização de Fundo
+🖥 Tela de Apresentação e Registro
 
-[ ] Adicionar imagens na pasta assets/backgrounds/:
+1. Tela de Apresentação
 
-assets:
-  - assets/backgrounds/bg1.png
-  - assets/backgrounds/bg2.png
-  - assets/backgrounds/bg3.png
-  - assets/backgrounds/bg4.png
-  - assets/backgrounds/bg5.png
+[ ] Melhorar o design da tela inicial, deixando mais amigável, chamativa e coerente com a vibe do app.
 
-[ ] Registrar os assets no pubspec.yaml.
+[ ] Integrar animações sutis e transições suaves.
 
-[ ] Criar função para permitir trocar o plano de fundo do app.
+
+
+2. Tela de Registro
+
+[ ] Exibir no primeiro contato com o app.
+
+[ ] Criar um fluxo visualmente integrado com a tela de apresentação.
+
+
 
 
 
 ---
 
-4️⃣ Segurança Avançada
+📂 main_screen.dart
 
-[ ] Implementar autenticação biométrica (digital ou facial).
+3.1 Estrutura
 
-[ ] Adicionar perguntas de segurança para recuperação de conta.
+[ ] Garantir que a tela principal seja carregada apenas uma vez na inicialização.
+
+
+3.2 Modo Confidencial
+
+[ ] Ao ativar:
+
+Alterar completamente a cor e o estilo visual do aplicativo, mas mantendo o estilo.
+
+Exibir apenas senhas confidenciais.
+
+
+
+3.3 Configurações
+
+[ ] Implementar:
+
+Autenticação biométrica (digital).
+
+Perguntas de segurança para recuperação de acesso.
+
+Troca de imagem de fundo com integração aos assets registrados no pubspec.yaml.
+
 
 
 
@@ -63,18 +72,16 @@ assets:
 
 🗂 Prioridade de Implementação
 
-1. Tela de apresentação + registro inicial.
+1. Corrigir o bug de carregamento duplo da main_screen.dart.
 
 
-2. Modo confidencial com mudança de tema.
+2. Desenvolver nova tela de apresentação + registro amigável e integrada.
 
 
-3. Registro e uso de backgrounds personalizados.
+3. Implementar Modo Confidencial com tema diferenciado.
 
 
-4. Biometria e perguntas de segurança.
+4. Adicionar segurança extra (biometria + perguntas).
 
 
-
-
----
+5. Suporte para mudança de background.
