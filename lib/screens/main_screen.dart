@@ -9,7 +9,6 @@ import '../services/password_service.dart';
 import 'category_screen.dart';
 import 'settings_screen.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme_confidential.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
