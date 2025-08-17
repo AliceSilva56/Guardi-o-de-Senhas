@@ -1,3 +1,4 @@
+
 // Arquivo main_screen.dart para a tela principal do Guardião de Senhas
 // Esta tela exibe as "pastas" (categorias) que contêm as senhas, permitindo ao usuário navegar entre elas.
 
@@ -9,6 +10,8 @@ import '../services/password_service.dart';
 import 'category_screen.dart';
 import 'settings_screen.dart';
 import '../theme/app_colors.dart';
+// import '../theme/app_theme_confidential.dart';
+// import 'registro_guardiao_flow.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

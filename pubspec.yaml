@@ -30,3 +30,5 @@ flutter:
     - 'assets/backgrounds/bg3.png'
     - 'assets/backgrounds/bg4.png'
     - 'assets/backgrounds/bg5.png'
+    - 'assets/logo/guardiao.png'
+    - 'assets/logo/guardiao_transparente.png'

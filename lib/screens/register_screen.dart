@@ -1,8 +1,10 @@
+
 // Arquivo register_screen.dart para a tela de registro do Guardião de Senhas
 // Agora com cores do app_colors.dart e app_theme.dart
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import '../theme/app_colors.dart';
+//import 'registro_guardiao_flow.dart';
 
 class RegisterScreen extends StatelessWidget {
   const RegisterScreen({super.key});

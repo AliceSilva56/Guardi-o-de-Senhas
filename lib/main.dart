@@ -1,11 +1,15 @@
 // main.dart - Guardião de Senhas
+// Este arquivo é o ponto de entrada do aplicativo Guardião de Senhas.
+// Ele configura o tema, as rotas e o gerenciamento de estado global para o aplicativo.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'screens/elf_intro_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/backup_screen.dart';
 import 'screens/category_screen.dart';
+import 'screens/registro_guardiao_flow.dart';
 import 'services/password_service.dart';
 
 void main() async {
@@ -32,7 +36,7 @@ class MyApp extends StatelessWidget {
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
           debugShowCheckedModeBanner: false,
-          initialRoute: '/login',
+          initialRoute: '/elf_intro',
           onGenerateRoute: (settings) {
             // Rotas com suporte para backgrounds
             Widget page;
@@ -42,6 +46,9 @@ class MyApp extends StatelessWidget {
                 break;
               case '/register':
                 page = const RegisterScreen();
+                break;
+              case '/registro_guardiao':
+                page = const RegistroGuardiaoFlow();
                 break;
               case '/main':
                 page = const MainScreen();
@@ -53,6 +60,9 @@ class MyApp extends StatelessWidget {
                 final args = settings.arguments as String;
                 page = CategoryScreen(category: args);
                 break;
+              case '/elf_intro':
+                page = const ElfIntroScreen();
+                
               default:
                 page = const LoginScreen();
             }

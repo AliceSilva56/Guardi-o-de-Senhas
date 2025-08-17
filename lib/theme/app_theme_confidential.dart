@@ -1,4 +1,8 @@
-// app_theme_confidential.dart
+
+// Arquivo: lib/theme/app_theme_confidential.dart
+// Este arquivo define as cores e estilos específicos para o tema do Guardião de Senhas,
+// incluindo cores para fundo, texto, botões e campos de entrada.
+
 import 'package:flutter/material.dart';
 
 class ConfidentialColors {

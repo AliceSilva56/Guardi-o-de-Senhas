@@ -1,3 +1,7 @@
+// Arquivo: lib/theme/app_theme.dart
+// Este arquivo define o tema principal do aplicativo Guardião de Senhas,
+// incluindo cores, fontes e estilos para diferentes elementos da interface.
+// Ele é usado para garantir uma aparência consistente em todo o aplicativo.
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 

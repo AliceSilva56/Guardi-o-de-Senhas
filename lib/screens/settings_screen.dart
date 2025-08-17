@@ -1,7 +1,7 @@
 //Arquivo settings_screen para Configurações do Guardião de Senhas
 // Este arquivo contém as configurações do aplicativo, incluindo opções de segurança, personalização e dados
-
 //Arquivo settings_screen.dart para Configurações do Guardião de Senhas
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/password_service.dart';
@@ -94,6 +94,16 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Importar backup'),
             subtitle: const Text('Restaurar dados salvos'),
             onTap: () => _importBackup(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete),
+            title: const Text('Limpar dados'),
+            subtitle: const Text('Excluir todos os dados do aplicativo'),
+            onTap: () {
+              // PasswordService.clearAllData();
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Todos os dados foram excluídos')));
+              Navigator.pop(context); // Volta para a tela anterior
+            },
           ),
         ],
       ),
