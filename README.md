@@ -1,87 +1,103 @@
-📌 Guardião de Senhas – Roadmap de Correções e Novas Funcionalidades
+📖 Guardião de Senhas – Roadmap
 
-Última revisão: Organização das cores do app
+🟢 Última atualização
 
+Adicionadas imagens do Elfo Guardião na tela de intro e registro.
 
----
+Textos do registro agora têm mais personalidade e narrativa.
 
-🐞 Correções Necessárias
+O aplicativo inicia perguntando se o usuário já possui conta:
 
-[ ] Verificar bug na inicialização: Quando o app inicia, ele parece entrar duas vezes na main_screen.dart. Ao clicar na seta, ele sai como se tivesse sido carregado em duplicidade.
+Sim → vai para tela de Login.
 
-Investigar se o problema está no Navigator, rotas ou no ciclo de vida do widget.
-
-
-
-
----
-
-🖥 Tela de Apresentação e Registro
-
-1. Tela de Apresentação
-
-[ ] Melhorar o design da tela inicial, deixando mais amigável, chamativa e coerente com a vibe do app.
-
-[ ] Integrar animações sutis e transições suaves.
-
-
-
-2. Tela de Registro
-
-[ ] Exibir no primeiro contato com o app.
-
-[ ] Criar um fluxo visualmente integrado com a tela de apresentação.
-
+Não → vai para tela de Cadastro.
 
 
 
 
 ---
 
-📂 main_screen.dart
+🔧 Próximas tarefas
 
-3.1 Estrutura
+🐞 Correções
 
-[ ] Garantir que a tela principal seja carregada apenas uma vez na inicialização.
+Verificar o motivo de o app, ao iniciar, mostrar uma seta de navegação e depois sair (como se entrasse duas vezes na main_screen.dart).
 
-
-3.2 Modo Confidencial
-
-[ ] Ao ativar:
-
-Alterar completamente a cor e o estilo visual do aplicativo, mas mantendo o estilo.
-
-Exibir apenas senhas confidenciais.
+Observação: parece que isso ocorre apenas quando se entra pelo cadastro → confirmar e corrigir.
 
 
+Ajustar a definição das cores de texto nas telas:
 
-3.3 Configurações
+registro_guardiao_flow.dart
 
-[ ] Implementar:
-
-Autenticação biométrica (digital).
-
-Perguntas de segurança para recuperação de acesso.
-
-Troca de imagem de fundo com integração aos assets registrados no pubspec.yaml.
+elf_intro_screen.dart
+→ No modo claro o texto deve ser preto.
+→ No modo escuro o texto deve ser branco.
 
 
 
 
 ---
 
-🗂 Prioridade de Implementação
+👤 Personalização do Usuário
 
-1. Corrigir o bug de carregamento duplo da main_screen.dart.
+Chamar o usuário pelo nome informado após o registro.
 
-
-2. Desenvolver nova tela de apresentação + registro amigável e integrada.
-
-
-3. Implementar Modo Confidencial com tema diferenciado.
+Exibir esse nome dentro da main_screen.dart.
 
 
-4. Adicionar segurança extra (biometria + perguntas).
 
 
-5. Suporte para mudança de background.
+---
+
+🎬 Fluxo de Apresentação & Registro
+
+1. Criar uma tela de apresentação inicial.
+
+Adicionar animações (intro + registro).
+
+Se possível, criar vídeos curtos para cada etapa do registro.
+
+Ajustar fundo do registro:
+
+Ou usar fundos similares às imagens do elfo.
+
+Ou remover completamente os fundos das imagens (transparência).
+
+
+
+
+
+
+---
+
+🛡️ Main Screen
+
+3.1 Modo Confidencial
+
+Quando ativado, o app deve mudar totalmente de cor e vibe.
+
+Exibir apenas as senhas confidenciais.
+
+
+3.2 Configurações
+
+Implementar:
+
+Biometria (impressão digital / reconhecimento facial).
+
+Perguntas de segurança.
+
+
+Adicionar opção para o sistema receber e trocar a imagem do background.
+
+
+
+---
+
+🔐 Tela de Login
+
+4.1 Adicionar funcionalidade para mostrar/ocultar senha no campo de login.
+
+
+---
