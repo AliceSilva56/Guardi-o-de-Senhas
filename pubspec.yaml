@@ -25,10 +25,22 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+  # pasta de imagens background
     - 'assets/backgrounds/bg1.png'
     - 'assets/backgrounds/bg2.png'
     - 'assets/backgrounds/bg3.png'
     - 'assets/backgrounds/bg4.png'
     - 'assets/backgrounds/bg5.png'
+
+  # pasta de imagens logo
     - 'assets/logo/guardiao.png'
     - 'assets/logo/guardiao_transparente.png'
+
+  # pasta de imagens animação
+    - 'assets/animacao/guardiao_apesentacao.png'
+    - 'assets/animacao/guardiao_nome.png'
+    - 'assets/animacao/guardiao_senhaMestra.png'
+    - 'assets/animacao/guardiao_PerguntaSeguranca.png'
+    - 'assets/animacao/guardiao_SenhaMestra.png'
+    - 'assets/animacao/guardiao_biometria.png'
+    - 'assets/animacao/guardiao_final.png'

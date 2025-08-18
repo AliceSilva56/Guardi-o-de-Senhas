@@ -83,12 +83,15 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     ),
   );
 
-  // TELA 1 - Apresentação
+    // TELA 1 - Apresentação
   Widget _intro() {
     return _wrapMagic(Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.shield, size: 120, color: Colors.amber),
+        Image.asset(
+          "assets/animacao/guardiao_apesentacao.png",
+          height: 150,
+        ),
         const SizedBox(height: 16),
         _title("Eu sou o elfo Guardião das Senhas. Meu nome é Sylas!"),
         const Text(
@@ -108,7 +111,16 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   Widget _nome() {
     return _wrapMagic(Column(
       children: [
-        _title("Me diga o seu nome"),
+        Image.asset(
+          "assets/animacao/guardiao_nome.png",
+          height: 120,
+        ),
+        const SizedBox(height: 12),
+         _title("Me diga o seu nome"),
+         const Text(
+          "Para que eu saiba quem eu devo proteger e deixar entrar.",
+          textAlign: TextAlign.center,
+        ),
         TextField(
           controller: nomeCtrl,
           decoration: InputDecoration(
@@ -134,6 +146,11 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   Widget _senha() {
     return _wrapMagic(Column(
       children: [
+        Image.asset(
+          "assets/animacao/guardiao_senhaMestra.png",
+          height: 120,
+        ),
+        const SizedBox(height: 12),
         _title("Escolha sua chave mestra"),
         TextField(
           controller: senhaCtrl,
@@ -163,7 +180,17 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   Widget _pergunta() {
     return _wrapMagic(Column(
       children: [
+        Image.asset(
+          "assets/animacao/guardiao_PerguntaSeguranca.png",
+          height: 120,
+        ),
+        const SizedBox(height: 12),
+        
         _title("Escolha uma pergunta de segurança"),
+        const Text(
+          "Mesmos os guardiões precisam de um truque extra. Escolha uma pergunta que só você saiba a resposta.",
+          textAlign: TextAlign.center,
+        ),
         DropdownButtonFormField<String>(
           value: pergunta.isEmpty ? null : pergunta,
           items: const [
@@ -171,6 +198,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
             DropdownMenuItem(value: "cidade", child: Text("Em que cidade você nasceu?")),
             DropdownMenuItem(value: "prof", child: Text("Qual era o nome do seu professor favorito?")),
           ],
+          
           onChanged: (v) => setState(() => pergunta = v ?? ""),
           decoration: InputDecoration(
             filled: true,
@@ -199,9 +227,16 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   Widget _biometria() {
     return _wrapMagic(Column(
       children: [
-        const Icon(Icons.fingerprint, size: 120),
+        Image.asset(
+          "assets/animacao/guardiao_biometria.png",
+          height: 120,
+        ),
         const SizedBox(height: 16),
-        _title("Deseja usar biometria para acesso rápido?"),
+         _title("Deseja usar biometria para acesso rápido?"),
+         const Text(
+          "Vejo que sua magia é poderosa. Deseja usar sua própia marca(biometria) para acessar seu cofre mais rápido?",
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -236,7 +271,10 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   Widget _finalizacao() {
     return _wrapMagic(Column(
       children: [
-        const Icon(Icons.auto_awesome, size: 120, color: Colors.amber),
+        Image.asset(
+          "assets/animacao/guardiao_final.png",
+          height: 150,
+        ),
         const SizedBox(height: 16),
         _title("Perfeito! Agora você está pronto."), // Colocar para ele chamar o nome do usuário
         const Text(
@@ -246,7 +284,9 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: () {
-            // TODO: Aqui você pode salvar os dados (Hive/secure storage) e navegar pra tela principal
+
+        //TODO: Aqui você pode salvar os dados (Hive/secure storage) e navegar pra tela principal
+            
             Navigator.of(context).pop(true);
           },
           child: const Text("Entrar no Cofre"),
