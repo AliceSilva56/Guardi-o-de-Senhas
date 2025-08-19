@@ -4,6 +4,7 @@
 // Ela apresenta uma imagem de um elfo (ou mascote do aplicativo) e dois botões:
 // um para login e outro para registro.
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'login_screen.dart';
 //import 'register_screen.dart';
 import 'registro_guardiao_flow.dart';
@@ -14,7 +15,8 @@ class ElfIntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.darkBackground, drawerScrimColor: const Color.fromARGB(255, 69, 9, 153),
+      
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -41,7 +43,8 @@ class ElfIntroScreen extends StatelessWidget {
               // Botões de escolha
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: const Color.fromARGB(255, 104, 24, 233), // roxo para o botão de login
+                  foregroundColor: Colors.white, // Texto branco
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
                 onPressed: () {
@@ -55,7 +58,11 @@ class ElfIntroScreen extends StatelessWidget {
               const SizedBox(height: 15),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor:  Colors.blue, // azul para o botão de registro
+                  foregroundColor: Colors.white, // Texto branco
+                  // modo escuro
+                  // backgroundColor: AppColors.primaryDark,
+                  
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
                 onPressed: () {

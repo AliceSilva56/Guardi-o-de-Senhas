@@ -4,6 +4,8 @@
 // escolher uma pergunta de segurança e decidir sobre o uso de biometria.
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class RegistroGuardiaoFlow extends StatefulWidget {
   const RegistroGuardiaoFlow({super.key});
 
@@ -24,7 +26,9 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   void nextPage() {
     if (pageIndex < 5) {
       setState(() => pageIndex++);
-      _controller.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+      _controller.nextPage(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut);
     }
   }
 
@@ -57,12 +61,13 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
 
   Widget _wrapMagic(Widget child) {
     return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF0D0D0D), Color(0xFF2C1250)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: Theme.of(context).brightness == Brightness.dark
+          ? [AppColors.backgroundDark, const Color.fromARGB(255, 69, 9, 153)]
+          : [const Color.fromARGB(255, 255, 252, 252), const Color.fromARGB(255, 43, 99, 197)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
         ),
       ),
       child: SafeArea(
@@ -75,13 +80,13 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   }
 
   Widget _title(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Text(
-      text,
-      textAlign: TextAlign.center,
-      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+      );
 
     // TELA 1 - Apresentação
   Widget _intro() {
@@ -89,7 +94,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Image.asset(
-          "assets/animacao/guardiao_apesentacao.png",
+          "assets/animation/guardiao_apresentacao_transparente.png",
           height: 150,
         ),
         const SizedBox(height: 16),
@@ -112,7 +117,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     return _wrapMagic(Column(
       children: [
         Image.asset(
-          "assets/animacao/guardiao_nome.png",
+          "assets/animation/guardiao_nome_transparente.png",
           height: 120,
         ),
         const SizedBox(height: 12),
@@ -147,7 +152,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     return _wrapMagic(Column(
       children: [
         Image.asset(
-          "assets/animacao/guardiao_senhaMestra.png",
+          "assets/animation/guardiao_senhaMestra_transparente.png",
           height: 120,
         ),
         const SizedBox(height: 12),
@@ -181,7 +186,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     return _wrapMagic(Column(
       children: [
         Image.asset(
-          "assets/animacao/guardiao_PerguntaSeguranca.png",
+          "assets/animation/guardiao_PerguntaSeguranca_transparente.png",
           height: 120,
         ),
         const SizedBox(height: 12),
@@ -228,7 +233,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     return _wrapMagic(Column(
       children: [
         Image.asset(
-          "assets/animacao/guardiao_biometria.png",
+          "assets/animation/guardiao_biometria_transparente.png",
           height: 120,
         ),
         const SizedBox(height: 16),
@@ -272,7 +277,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     return _wrapMagic(Column(
       children: [
         Image.asset(
-          "assets/animacao/guardiao_final.png",
+          "assets/animation/guardiao_final_transparente.png",
           height: 150,
         ),
         const SizedBox(height: 16),

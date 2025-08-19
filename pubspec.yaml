@@ -21,6 +21,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.11.0
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+
 
 flutter:
   uses-material-design: true
@@ -36,11 +43,10 @@ flutter:
     - 'assets/logo/guardiao.png'
     - 'assets/logo/guardiao_transparente.png'
 
-  # pasta de imagens animação
-    - 'assets/animacao/guardiao_apesentacao.png'
-    - 'assets/animacao/guardiao_nome.png'
-    - 'assets/animacao/guardiao_senhaMestra.png'
-    - 'assets/animacao/guardiao_PerguntaSeguranca.png'
-    - 'assets/animacao/guardiao_SenhaMestra.png'
-    - 'assets/animacao/guardiao_biometria.png'
-    - 'assets/animacao/guardiao_final.png'
+  # pasta de imagens animation
+    - 'assets/animation/guardiao_apresentacao_transparente.png' # Tela de apresentação
+    - 'assets/animation/guardiao_biometria_transparente.png' # Tela de biometria
+    - 'assets/animation/guardiao_final_transparente.png' # Tela final
+    - 'assets/Animation/guardiao_nome_transparente.png' # Tela de nome
+    - 'assets/animation/guardiao_PerguntaSeguranca_transparente.png' # Tela de pergunta de segurança
+    - 'assets/Animation/guardiao_senhaMestra_transparente.png' # Tela de senha mestra
