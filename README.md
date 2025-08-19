@@ -1,50 +1,29 @@
 📖 Guardião de Senhas – Roadmap
 
-🟢 Última atualização
+🟢 Últimas Atualizações
 
-Adicionadas imagens do Elfo Guardião na tela de intro e registro.
+Troquei as imagens do Guardião (Elfo).
 
-Textos do registro agora têm mais personalidade e narrativa.
+Ajustei cores de texto e background.
 
-O aplicativo inicia perguntando se o usuário já possui conta:
-
-Sim → vai para tela de Login.
-
-Não → vai para tela de Cadastro.
-
-
+Gerei os ícones do APK.
 
 
 ---
 
-🔧 Próximas tarefas
+🔧 Correções Necessárias
 
-🐞 Correções
+Bug de navegação: ao iniciar, o app mostra uma seta e sai, como se entrasse duas vezes na main_screen.dart.
 
-Verificar o motivo de o app, ao iniciar, mostrar uma seta de navegação e depois sair (como se entrasse duas vezes na main_screen.dart).
-
-Observação: parece que isso ocorre apenas quando se entra pelo cadastro → confirmar e corrigir.
-
-
-Ajustar a definição das cores de texto nas telas:
-
-registro_guardiao_flow.dart
-
-elf_intro_screen.dart
-→ No modo claro o texto deve ser preto.
-→ No modo escuro o texto deve ser branco.
-
-
-
+Parece acontecer apenas ao entrar pelo cadastro → confirmar e corrigir.
 
 ---
 
 👤 Personalização do Usuário
 
-Chamar o usuário pelo nome informado após o registro.
+Após o registro, chamar o usuário pelo nome informado.
 
-Exibir esse nome dentro da main_screen.dart.
-
+Exibir o nome também dentro da main_screen.dart.
 
 
 
@@ -52,22 +31,14 @@ Exibir esse nome dentro da main_screen.dart.
 
 🎬 Fluxo de Apresentação & Registro
 
-1. Criar uma tela de apresentação inicial.
+1. Desenvolver tela de apresentação inicial.
+
+
+2. Melhorar a tela de registro por etapas:
 
 Adicionar animações (intro + registro).
 
-Se possível, criar vídeos curtos para cada etapa do registro.
-
-Ajustar fundo do registro:
-
-Ou usar fundos similares às imagens do elfo.
-
-Ou remover completamente os fundos das imagens (transparência).
-
-
-
-
-
+Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 ---
 
@@ -75,21 +46,21 @@ Ou remover completamente os fundos das imagens (transparência).
 
 3.1 Modo Confidencial
 
-Quando ativado, o app deve mudar totalmente de cor e vibe.
+Alterar completamente cores e vibe do app quando ativado.
 
-Exibir apenas as senhas confidenciais.
+Exibir apenas senhas confidenciais.
 
 
 3.2 Configurações
 
-Implementar:
+Adicionar funcionalidades:
 
-Biometria (impressão digital / reconhecimento facial).
+Biometria (impressão digital).
 
 Perguntas de segurança.
 
 
-Adicionar opção para o sistema receber e trocar a imagem do background.
+Opção para trocar a imagem do background dinamicamente.
 
 
 
@@ -97,7 +68,6 @@ Adicionar opção para o sistema receber e trocar a imagem do background.
 
 🔐 Tela de Login
 
-4.1 Adicionar funcionalidade para mostrar/ocultar senha no campo de login.
-
+Mostrar/Ocultar senha no campo de login.
 
 ---
