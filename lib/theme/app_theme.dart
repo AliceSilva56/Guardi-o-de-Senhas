@@ -10,8 +10,21 @@ class AppColors {
   static const Color backgroundDark = Color(0xFF0D0D0D); // Quase preto
   static const Color primaryDark = Color.fromARGB(255, 69, 9, 153); // Roxo escuro
   static const Color textDark = Colors.white; // Branco
+
+// 🔹 Cores dos botões
+  static const Color buttonPrimary = Color.fromARGB(255, 43, 99, 197); // Azul claro
+  static const Color buttonText = Colors.white; // Branco
+
+// cores dos butões secundários
+  static const Color buttonSecondary = Color.fromARGB(255, 69, 9, 153); // Roxo escuro
+  static const Color buttonSecondaryText = Colors.white;
+
 }
 
+
+
+
+// 🔹 Tema da aplicação
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
@@ -27,6 +40,7 @@ class AppTheme {
     ),
   );
 
+// 🔹 Tema escuro 
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
     scaffoldBackgroundColor: AppColors.backgroundDark,

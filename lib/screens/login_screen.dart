@@ -1,22 +1,29 @@
-
 // Arquivo login_screen.dart para a tela de login do Guardião de Senhas
 // Agora com cores do app_colors.dart e app_theme.dart
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import '../theme/app_colors.dart';
-// import 'registro_guardiao_flow.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final masterPasswordController = TextEditingController();
+  bool _obscurePassword = true; // controla se a senha está visível ou não
+
+  @override
   Widget build(BuildContext context) {
-    final masterPasswordController = TextEditingController();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
-    final backgroundColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
-    final inputFillColor = isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground;
+    final backgroundColor =
+        isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final inputFillColor =
+        isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -38,7 +45,7 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 20),
               TextField(
                 controller: masterPasswordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 style: TextStyle(color: textColor),
                 decoration: InputDecoration(
                   labelText: 'Senha Mestra',
@@ -46,6 +53,17 @@ class LoginScreen extends StatelessWidget {
                   filled: true,
                   fillColor: inputFillColor,
                   border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      color: secondaryTextColor,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -78,7 +96,8 @@ class LoginScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const RegisterScreen()),
                       );
                     },
                     child: const Text('Cadastrar'),

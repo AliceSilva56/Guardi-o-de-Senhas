@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
+
 class RegistroGuardiaoFlow extends StatefulWidget {
   const RegistroGuardiaoFlow({super.key});
 
@@ -104,7 +105,11 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
-        ElevatedButton(
+         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.buttonPrimary,
+            foregroundColor: AppColors.buttonText,
+          ),
           onPressed: nextPage,
           child: const Text("Começar a Jornada"),
         ),
@@ -136,7 +141,11 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           ),
         ),
         const SizedBox(height: 20),
-        ElevatedButton(
+         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.buttonPrimary,
+            foregroundColor: AppColors.buttonText,
+          ),
           onPressed: () {
             if (nomeCtrl.text.trim().isEmpty) return;
             nextPage();
@@ -146,6 +155,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
       ],
     ));
   }
+
 
   // TELA 3 - Senha Mestra
   Widget _senha() {
@@ -171,6 +181,10 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         const Text("Dica: Use símbolos, números e letras. Uma chave forte mantém monstros afastados!"),
         const SizedBox(height: 20),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.buttonPrimary,
+            foregroundColor: AppColors.buttonText,
+          ),
           onPressed: () {
             if (senhaCtrl.text.length < 6) return;
             nextPage();
@@ -218,6 +232,10 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         ),
         const SizedBox(height: 20),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.buttonPrimary,
+            foregroundColor: AppColors.buttonText,
+          ),
           onPressed: () {
             if (pergunta.isEmpty || respostaCtrl.text.trim().isEmpty) return;
             nextPage();
@@ -246,19 +264,13 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(
+           Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: ElevatedButton(
-                onPressed: () {
-                  biometriaEscolha = true;
-                  nextPage();
-                },
-                child: const Text("Sim, ativar"),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.buttonSecondary,
+                  foregroundColor: AppColors.buttonText,
+                ),
                 onPressed: () {
                   biometriaEscolha = false;
                   nextPage();
@@ -287,11 +299,13 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        ElevatedButton(
+       ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.buttonPrimary,
+            foregroundColor: AppColors.buttonText,
+          ),
           onPressed: () {
-
-        //TODO: Aqui você pode salvar os dados (Hive/secure storage) e navegar pra tela principal
-            
+            // TODO: Aqui você pode salvar os dados (Hive/secure storage) e navegar pra tela principal
             Navigator.of(context).pop(true);
           },
           child: const Text("Entrar no Cofre"),
