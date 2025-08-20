@@ -3,6 +3,7 @@
 🟢 Últimas Atualizações
 
 Coloqui o Mostrar/Ocultar senha no campo de login.
+
 Troquei as cores dos buttons do registro_guardiao_flow.dart
 
 
