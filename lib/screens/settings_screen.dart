@@ -80,19 +80,19 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.history),
-            title: const Text('Último backup realizado'),
+            title: const Text('Último backup realizado'), // Exibe a data do último backup
             subtitle: Text(_getLastBackupInfo()),
           ),
           ListTile(
             leading: const Icon(Icons.backup),
-            title: const Text('Criar backup'),
-            subtitle: const Text('Exportar senhas criptografadas'),
+            title: const Text('Criar backup'), // Cria um backup dos dados // fazer a implementação do backup
+            subtitle: const Text('Exportar senhas criptografadas'), // Exportar as senhas criptografadas // fazer a implementação do backup
             onTap: () => _exportBackup(context),
           ),
           ListTile(
             leading: const Icon(Icons.restore),
-            title: const Text('Importar backup'),
-            subtitle: const Text('Restaurar dados salvos'),
+            title: const Text('Importar backup'), // Importa um backup de dados // fazer a implementação do backup
+            subtitle: const Text('Restaurar dados salvos'), // Restaurar backup
             onTap: () => _importBackup(context),
           ),
           ListTile(
@@ -112,7 +112,7 @@ class SettingsScreen extends StatelessWidget {
 
   // ======================= TEMA ========================
   void _showThemeDialog(BuildContext context) async {
-    final themeOptions = ['꥟ Claro', '⏾ Escuro', '⚙️ Sistema'];
+    final themeOptions = ['꥟ Claro', '⏾ Escuro', '⚙️ Sistema']; // Opções de tema // Fazer a implementação do tema
     final themeController = Provider.of<ThemeController>(context, listen: false);
     String currentTheme = themeController.themeModeName;
     await showDialog(
@@ -138,6 +138,8 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // ======================= BACKGROUND ========================
+  // Fazer a implementação do background
+
   void _showBackgroundDialog(BuildContext context) async {
     final images = await BackgroundController.getAvailableImages();
     String? currentImage = BackgroundController.backgroundImage; // leitura direta
@@ -180,6 +182,9 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // ======================= SENHA ========================
+  // Configura a senha mestra
+  // Configura a senha confidencial
+
   void _configureMasterPassword(BuildContext context) async {
     final controller = TextEditingController();
     final confirmController = TextEditingController();
@@ -277,6 +282,7 @@ class SettingsScreen extends StatelessWidget {
 }
 
 // ======================= PERFIL ========================
+// fazer a implementação do perfil
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 

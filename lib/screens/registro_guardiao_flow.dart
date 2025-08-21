@@ -4,8 +4,8 @@
 // escolher uma pergunta de segurança e decidir sobre o uso de biometria.
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-
+import '../theme/app_colors.dart';
+import 'main_screen.dart';
 
 class RegistroGuardiaoFlow extends StatefulWidget {
   const RegistroGuardiaoFlow({super.key});
@@ -61,14 +61,15 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   }
 
   Widget _wrapMagic(Widget child) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-  decoration: BoxDecoration(
-    gradient: LinearGradient(
-      colors: Theme.of(context).brightness == Brightness.dark
-          ? [AppColors.backgroundDark, const Color.fromARGB(255, 69, 9, 153)]
-          : [const Color.fromARGB(255, 255, 252, 252), const Color.fromARGB(255, 43, 99, 197)],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [AppColors.darkBackground, AppColors.secondary]
+              : [AppColors.lightBackground, AppColors.primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: SafeArea(
@@ -89,7 +90,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         ),
       );
 
-    // TELA 1 - Apresentação
+  // TELA 1 - Apresentação
   Widget _intro() {
     return _wrapMagic(Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -105,7 +106,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
-         ElevatedButton(
+        ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.buttonPrimary,
             foregroundColor: AppColors.buttonText,
@@ -126,8 +127,8 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           height: 120,
         ),
         const SizedBox(height: 12),
-         _title("Me diga o seu nome"),
-         const Text(
+        _title("Me diga o seu nome"),
+        const Text(
           "Para que eu saiba quem eu devo proteger e deixar entrar.",
           textAlign: TextAlign.center,
         ),
@@ -141,7 +142,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           ),
         ),
         const SizedBox(height: 20),
-         ElevatedButton(
+        ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.buttonPrimary,
             foregroundColor: AppColors.buttonText,
@@ -156,9 +157,10 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     ));
   }
 
-
   // TELA 3 - Senha Mestra
   Widget _senha() {
+    final nome = nomeCtrl.text.trim();
+    final saudacao = nome.isEmpty ? "" : ", $nome";
     return _wrapMagic(Column(
       children: [
         Image.asset(
@@ -166,7 +168,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           height: 120,
         ),
         const SizedBox(height: 12),
-        _title("Escolha sua chave mestra"),
+        _title("Escolha sua chave mestra$saudacao"),
         TextField(
           controller: senhaCtrl,
           obscureText: true,
@@ -178,7 +180,8 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           ),
         ),
         const SizedBox(height: 10),
-        const Text("Dica: Use símbolos, números e letras. Uma chave forte mantém monstros afastados!"),
+        const Text(
+            "Dica: Use símbolos, números e letras. Uma chave forte mantém monstros afastados!"),
         const SizedBox(height: 20),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -197,6 +200,8 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
 
   // TELA 4 - Pergunta de segurança
   Widget _pergunta() {
+    final nome = nomeCtrl.text.trim();
+    final saudacao = nome.isEmpty ? "" : ", $nome";
     return _wrapMagic(Column(
       children: [
         Image.asset(
@@ -204,8 +209,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           height: 120,
         ),
         const SizedBox(height: 12),
-        
-        _title("Escolha uma pergunta de segurança"),
+        _title("Escolha uma pergunta de segurança$saudacao"),
         const Text(
           "Mesmos os guardiões precisam de um truque extra. Escolha uma pergunta que só você saiba a resposta.",
           textAlign: TextAlign.center,
@@ -213,11 +217,15 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         DropdownButtonFormField<String>(
           value: pergunta.isEmpty ? null : pergunta,
           items: const [
-            DropdownMenuItem(value: "pet", child: Text("Qual foi o nome do seu primeiro pet?")),
-            DropdownMenuItem(value: "cidade", child: Text("Em que cidade você nasceu?")),
-            DropdownMenuItem(value: "prof", child: Text("Qual era o nome do seu professor favorito?")),
+            DropdownMenuItem(
+                value: "pet",
+                child: Text("Qual foi o nome do seu primeiro pet?")),
+            DropdownMenuItem(
+                value: "cidade", child: Text("Em que cidade você nasceu?")),
+            DropdownMenuItem(
+                value: "prof",
+                child: Text("Qual era o nome do seu professor favorito?")),
           ],
-          
           onChanged: (v) => setState(() => pergunta = v ?? ""),
           decoration: InputDecoration(
             filled: true,
@@ -248,6 +256,8 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
 
   // TELA 5 - Biometria
   Widget _biometria() {
+    final nome = nomeCtrl.text.trim();
+    final saudacao = nome.isEmpty ? "" : ", $nome";
     return _wrapMagic(Column(
       children: [
         Image.asset(
@@ -255,8 +265,8 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           height: 120,
         ),
         const SizedBox(height: 16),
-         _title("Deseja usar biometria para acesso rápido?"),
-         const Text(
+        _title("Deseja usar biometria para acesso rápido$saudacao?"),
+        const Text(
           "Vejo que sua magia é poderosa. Deseja usar sua própia marca(biometria) para acessar seu cofre mais rápido?",
           textAlign: TextAlign.center,
         ),
@@ -264,7 +274,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-           Padding(
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -286,6 +296,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
 
   // TELA 6 - Final
   Widget _finalizacao() {
+    final nome = nomeCtrl.text.trim();
     return _wrapMagic(Column(
       children: [
         Image.asset(
@@ -293,20 +304,25 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           height: 150,
         ),
         const SizedBox(height: 16),
-        _title("Perfeito! Agora você está pronto."), // Colocar para ele chamar o nome do usuário
+        _title(
+            "Perfeito${nome.isEmpty ? "!" : ", $nome!"} Agora você está pronto."),
         const Text(
           "Suas senhas estão seguras sob minha proteção. Vamos juntos nesta jornada!",
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-       ElevatedButton(
+        ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.buttonPrimary,
             foregroundColor: AppColors.buttonText,
           ),
           onPressed: () {
-            // TODO: Aqui você pode salvar os dados (Hive/secure storage) e navegar pra tela principal
-            Navigator.of(context).pop(true);
+            // Navega para a tela principal já chamando pelo nome informado
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => MainScreen(userName: nome),
+              ),
+            );
           },
           child: const Text("Entrar no Cofre"),
         ),

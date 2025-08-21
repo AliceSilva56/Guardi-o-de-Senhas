@@ -9,34 +9,41 @@ class AppColors {
   static const Color secondary = Color(0xFF8A2BE2); // Violeta neon
   static const Color tertiary = Color(0xFFFFD700); // Dourado
 
+
   // 🖤 Tema Escuro
-  static const Color darkBackground = Color(0xFF0D0D0D);
-  static const Color darkAppBar = Color(0xFF1A1A1A);
-  static const Color darkTextPrimary = Colors.white;
-  static const Color darkTextSecondary = Colors.white70;
-  static const Color darkInputBackground = Color(0xFF1E1E1E);
+  static const Color darkBackground = Color(0xFF0D0D0D); // Fundo escuro
+  static const Color darkAppBar = Color(0xFF1A1A1A); // Fundo escuro do AppBar
+  static const Color darkTextPrimary = Colors.white; // Texto primário claro
+  static const Color darkTextSecondary = Colors.white70; // Texto secundário mais suave
+  static const Color darkInputBackground = Color(0xFF1E1E1E); // Fundo dos campos de entrada
+
 
   // 🤍 Tema Claro
-  static const Color lightBackground = Colors.white;
-  static const Color lightAppBar = Colors.white;
-  static const Color lightTextPrimary = Colors.black;
-  static const Color lightTextSecondary = Colors.black87;
-  static const Color lightInputBackground = Color(0xFFF5F5F5);
+  static const Color lightBackground = Colors.white; // Fundo claro
+  static const Color lightAppBar = Colors.white; // Fundo claro do AppBar
+  static const Color lightTextPrimary = Colors.black; // Texto primário escuro
+  static const Color lightTextSecondary = Colors.black87; // Texto secundário mais suave
+  static const Color lightInputBackground = Color(0xFFF5F5F5); // Fundo dos campos de entrada claros
 
   // 🔘 Botões
-  static const Color buttonPrimary = primary;
-  static const Color buttonSecondary = secondary;
-  static const Color buttonText = Colors.white;
+  static const Color buttonPrimary = primary; // Azul neon
+  static const Color buttonSecondary = secondary; // Violeta neon
+  static const Color buttonTertiary = tertiary; // Dourado
+  static const Color buttonDisabled = Colors.grey; // Botão desativado
+  static const Color buttonText = Colors.white; // Texto dos botões
 
   // ✏️ Campos de texto
-  static const Color inputBorder = primary;
-  static const Color inputHint = Colors.grey;
-  static const Color inputText = Colors.white;
+  static const Color inputBorder = primary; // Borda dos campos de entrada
+  static const Color inputBackground = lightInputBackground; // Fundo dos campos de entrada
+  static const Color inputHint = Colors.grey; // Texto de dica nos campos de entrada
+  static const Color inputdark = Colors.black87; // Texto nos campos de entrada
+  static const Color inputText = Colors.white; // Texto nos campos de entrada claros
 
   // ❌ Erros e avisos
-  static const Color error = Colors.red;
-  static const Color warning = Colors.orange;
-  static const Color success = Colors.green;
+  static const Color error = Colors.red; // Vermelho para erros
+  static const Color warning = Colors.orange; // Laranja para avisos
+  static const Color success = Colors.green; // Verde para sucessos
 }
+
 
 

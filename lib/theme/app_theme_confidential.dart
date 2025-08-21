@@ -34,3 +34,26 @@ class ConfidentialColors {
   static Color primary = const Color(0xFFEA80FC); // lilás neon
   static Color secondary = const Color(0xFFFF1744); // vermelho neon
 }
+
+class ConfidentialTheme {
+  static ThemeData get theme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: Colors.redAccent,
+      scaffoldBackgroundColor: const Color(0xFF1B1B1B),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.redAccent,
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: Colors.redAccent,
+        foregroundColor: Colors.white,
+      ),
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(color: Colors.white),
+        bodyMedium: TextStyle(color: Colors.white70),
+        titleLarge: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}

@@ -1,4 +1,3 @@
-
 // Arquivo main_screen.dart para a tela principal do Guardião de Senhas
 // Esta tela exibe as "pastas" (categorias) que contêm as senhas, permitindo ao usuário navegar entre elas.
 
@@ -8,13 +7,15 @@ import 'package:uuid/uuid.dart';
 import '../models/password_model.dart';
 import '../services/password_service.dart';
 import 'category_screen.dart';
+import 'confidencial_screen.dart';
 import 'settings_screen.dart';
 import '../theme/app_colors.dart';
-// import '../theme/app_theme_confidential.dart';
-// import 'registro_guardiao_flow.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final String? userName; // ← acréscimo: nome opcional
+
+  const MainScreen({super.key, this.userName});
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
@@ -36,6 +37,7 @@ class _MainScreenState extends State<MainScreen> {
     'Saúde': 'Planos de saúde, apps de treino, farmácias',
     'Segurança': 'Autenticadores, cofres de senha, backups',
   };
+
 
   @override
   void initState() {
@@ -307,7 +309,6 @@ class _MainScreenState extends State<MainScreen> {
                     dropdownColor: isDark ? AppColors.darkAppBar : AppColors.lightAppBar,
                   ),
                   const SizedBox(height: 4),
-                  // ---- AQUI MOSTRA A DESCRIÇÃO DA CATEGORIA ----
                   if (categoryController.text.isNotEmpty)
                     Text(
                       getCategoryDescription(),
@@ -404,66 +405,183 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+@override
+Widget build(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final textColor = isDark ? Colors.white : Colors.black;
+  final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
 
-    final existingCategories = _existingCategories().toList()..sort();
+  final existingCategories = _existingCategories().toList()..sort();
+  final displayName = widget.userName?.trim().isEmpty ?? true ? 'Guardião' : widget.userName!.trim();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Guardião de Senhas', style: TextStyle(color: textColor)),
-        actions: [
-          IconButton(
-            icon: Icon(showConfidential ? Icons.visibility : Icons.visibility_off),
-            tooltip: showConfidential ? 'Ocultar confidenciais' : 'Mostrar confidenciais',
-            color: textColor,
-            onPressed: toggleShowConfidential,
+  return Scaffold(
+    appBar: AppBar(
+      title: AnimatedOpacity(
+        duration: const Duration(seconds: 2),
+        opacity: 1.0,
+        child: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color.fromARGB(255, 167, 77, 247), Color.fromARGB(255, 102, 41, 223)], // violeta futurista
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Os pergaminhos de senha aguardam, $displayName',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white, // branco p/ shader aplicar
+              shadows: [
+                Shadow(
+                  blurRadius: 8,
+                  color: Colors.black54,
+                  offset: Offset(0, 2),
+                )
+              ],
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            color: textColor,
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen())),
-          ),
-        ],
+        ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => loadPasswords(),
-        child: existingCategories.isEmpty
-            ? ListView(
-                children: [
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Text('Nenhuma pasta ainda. Adicione senhas para criar pastas.', style: TextStyle(color: secondaryTextColor)),
-                    ),
-                  )
-                ],
-              )
-            : ListView.builder(
-                itemCount: existingCategories.length,
-                itemBuilder: (context, i) {
-                  final cat = existingCategories[i];
-                  return ListTile(
-                    leading: Icon(Icons.folder, color: textColor),
-                    title: Text(cat, style: TextStyle(color: textColor)),
-                    trailing: CircleAvatar(
-                      radius: 14,
-                      backgroundColor: AppColors.primary,
-                      child: Text(_countForCategory(cat).toString(), style: const TextStyle(color: Colors.white)),
-                    ),
-                    onTap: () => openCategory(cat),
-                  );
+      // Ícones de ação na AppBar
+      // Ícone para mostrar/ocultar senhas confidenciais
+
+      
+actions: [
+  IconButton(
+    icon: Icon(
+      Icons.lock, // faz sentido
+      color: textColor,
+    ),
+    tooltip: 'Modo Confidencial',
+    onPressed: () {
+      showDialog(
+        context: context,
+        builder: (context) {
+          final TextEditingController _passwordController =
+              TextEditingController();
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final bgColor = isDark
+              ? AppColors.darkAppBar
+              : AppColors.lightAppBar;
+          final titleColor = isDark
+              ? AppColors.darkTextPrimary
+              : AppColors.lightTextPrimary;
+          final textFieldColor = isDark
+              ? AppColors.darkInputBackground
+              : AppColors.lightInputBackground;
+
+          return AlertDialog(
+            backgroundColor: bgColor,
+            title: Text('Acesso Confidencial', style: TextStyle(color: titleColor)),
+            content: TextField(
+              controller: _passwordController,
+              obscureText: true,
+              style: TextStyle(color: titleColor),
+              decoration: InputDecoration(
+                hintText: 'Digite a senha',
+                hintStyle: TextStyle(color: AppColors.inputHint),
+                filled: true,
+                fillColor: textFieldColor,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.inputBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.inputBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.buttonPrimary, width: 2),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text('Cancelar', style: TextStyle(color: titleColor)),
+                onPressed: () => Navigator.pop(context),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.buttonPrimary,
+                  foregroundColor: AppColors.buttonText,
+                ),
+                child: const Text('Entrar'),
+                onPressed: () {
+                  if (_passwordController.text == "1234") {
+                    
+                    // Senha correta → fecha popup e abre tela confidencial
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ConfidencialScreen(),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Senha incorreta!")),
+                    );
+                  }
                 },
               ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => addPasswordDialog(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
+            ],
+          );
+        },
+      );
+    },
+  ),
+  //icon de configurações
+  IconButton(
+    icon: const Icon(Icons.settings),
+    color: textColor,
+    onPressed: () => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+    ),
+  ),
+],
+    ),
+    body: RefreshIndicator(
+      onRefresh: () async => loadPasswords(),
+      child: existingCategories.isEmpty
+          ? ListView(
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Text(
+                      'Nenhuma pasta ainda. Adicione senhas para criar pastas.',
+                      style: TextStyle(color: secondaryTextColor),
+                    ),
+                  ),
+                )
+              ],
+            )
+          : ListView.builder(
+              itemCount: existingCategories.length,
+              itemBuilder: (context, i) {
+                final cat = existingCategories[i];
+                return ListTile(
+                  leading: Icon(Icons.folder, color: textColor),
+                  title: Text(cat, style: TextStyle(color: textColor)),
+                  trailing: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: AppColors.primary,
+                    child: Text(
+                      _countForCategory(cat).toString(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  onTap: () => openCategory(cat),
+                );
+              },
+            ),
+    ),
+
+    // FloatingActionButton para adicionar nova senha
+    floatingActionButton: FloatingActionButton(
+      onPressed: () => addPasswordDialog(),
+      backgroundColor: AppColors.primary,
+      foregroundColor: Colors.white,
+      child: const Icon(Icons.add),
       ),
     );
   }

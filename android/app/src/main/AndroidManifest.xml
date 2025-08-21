@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="guardiao_de_senhas"
+        android:label="Guardião de Senhas"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
