@@ -46,14 +46,12 @@ class _MainScreenState extends State<MainScreen> {
     showConfidential = false;
   }
 
-  void loadPasswords() {
-    passwords = PasswordService.searchPasswords(
-      searchQuery,
-      includeConfidential: showConfidential,
-    );
+ void loadPasswords() {
+    // sempre carrega apenas senhas normais (não confidenciais)
+    final all = PasswordService.searchPasswords(searchQuery, includeConfidential: false);
+    passwords = all.where((p) => !p.confidential).toList();
     setState(() {});
   }
-
   Future<void> toggleShowConfidential() async {
     if (!showConfidential) {
       final result = await _askMasterPassword();

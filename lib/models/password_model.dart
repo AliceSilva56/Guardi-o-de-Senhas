@@ -11,6 +11,7 @@ class PasswordModel {
   final bool confidential; // novo
   final DateTime createdAt;
   final DateTime lastModified;
+  final bool isConfidential; // novo, para indicar se é confidencial
 
   PasswordModel({
     required this.id,
@@ -22,6 +23,7 @@ class PasswordModel {
     this.confidential = false,
     required this.createdAt,
     required this.lastModified,
+    this.isConfidential = false, // padrão é falso // novo
   });
 
   Map<String, dynamic> toMap() => {

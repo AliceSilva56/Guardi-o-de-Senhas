@@ -11,6 +11,7 @@ import '../services/password_service.dart';
 class CategoryScreen extends StatefulWidget {
   final String category;
   const CategoryScreen({super.key, required this.category});
+  
 
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
@@ -39,7 +40,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   void loadCategoryPasswords() {
-    categoryPasswords = PasswordService.getByCategory(widget.category, includeConfidential: true);
+    // Antes: trazia inclusive confidenciais
+    // categoryPasswords = PasswordService.getByCategory(widget.category, includeConfidential: true);
+
+    // Agora: pega apenas senhas normais, confidenciais ficam fora desta tela
+    categoryPasswords = PasswordService.getByCategory(widget.category)
+        .where((p) => !p.confidential)
+        .toList();
+
     setState(() {});
   }
 

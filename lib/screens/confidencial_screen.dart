@@ -21,7 +21,8 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
   }
 
   void loadPasswords() {
-    passwords = PasswordService.searchPasswords('', includeConfidential: true);
+    final all = PasswordService.searchPasswords('', includeConfidential: true);
+    passwords = all.where((p) => p.confidential).toList(); // só as senhas confidenciais
     setState(() {});
   }
 
@@ -29,9 +30,11 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
     final siteController = TextEditingController(text: editing?.siteName ?? '');
     final userController = TextEditingController(text: editing?.username ?? '');
     final passController = TextEditingController(text: editing?.password ?? '');
-    final categoryController = TextEditingController(text: editing?.category ?? 'Pessoal');
     final notesController = TextEditingController(text: editing?.notes ?? '');
     bool isConfidential = true;
+
+    // categoria inicial
+    String selectedCategory = editing?.category ?? 'Pessoal';
 
     bool obscurePassword = true;
     String strengthText = '';
@@ -61,7 +64,7 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
           content: SingleChildScrollView(
             child: Column(
               children: [
-                // Mantém exatamente igual ao seu código original
+                // campo site
                 TextField(
                   controller: siteController,
                   textCapitalization: TextCapitalization.sentences,
@@ -76,6 +79,7 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                // campo usuário
                 TextField(
                   controller: userController,
                   style: TextStyle(color: textColor),
@@ -89,6 +93,7 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                // campo senha
                 Row(
                   children: [
                     Expanded(
@@ -124,12 +129,15 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
+                // indicador de força
                 if (passController.text.isNotEmpty || strengthText.isNotEmpty)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Força: ${strengthText.isEmpty ? PasswordService.calculatePasswordStrength(passController.text)['text'] : strengthText}',
-                          style: TextStyle(color: secondaryTextColor)),
+                      Text(
+                        'Força: ${strengthText.isEmpty ? PasswordService.calculatePasswordStrength(passController.text)['text'] : strengthText}',
+                        style: TextStyle(color: secondaryTextColor),
+                      ),
                       const SizedBox(height: 4),
                       LinearProgressIndicator(
                         value: (strengthLevel == 'weak') ? 0.33 : (strengthLevel == 'medium') ? 0.66 : 1.0,
@@ -140,10 +148,16 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
                     ],
                   ),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: categoryController,
-                  readOnly: true,
-                  style: TextStyle(color: textColor),
+                // campo categoria (agora Dropdown igual ao main_screen)
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
+                  items: ['Pessoal', 'Trabalho', 'Bancos', 'Outros']
+                      .map((cat) => DropdownMenuItem(
+                            value: cat,
+                            child: Text(cat, style: TextStyle(color: textColor)),
+                          ))
+                      .toList(),
+                  onChanged: (val) => innerSetState(() => selectedCategory = val!),
                   decoration: InputDecoration(
                     labelText: 'Categoria',
                     errorText: categoryError,
@@ -152,8 +166,10 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
                     enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
                     focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
                   ),
+                  dropdownColor: isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar,
                 ),
                 const SizedBox(height: 8),
+                // campo notas
                 TextField(
                   controller: notesController,
                   textCapitalization: TextCapitalization.sentences,
@@ -186,7 +202,7 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
                   siteName: siteController.text,
                   username: userController.text,
                   password: passController.text,
-                  category: categoryController.text.isEmpty ? 'Pessoal' : categoryController.text,
+                  category: selectedCategory,
                   notes: notesController.text,
                   confidential: true,
                   createdAt: editing?.createdAt ?? DateTime.now(),
@@ -217,92 +233,92 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
     final appBarColor = isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar;
     final textColor = isDark ? ConfidentialColors.darkText : ConfidentialColors.lightText;
 
-   return Scaffold(
-  backgroundColor: backgroundColor,
-  appBar: AppBar(
-    backgroundColor: appBarColor,
-    title: AnimatedOpacity(
-      duration: const Duration(seconds: 2),
-      opacity: 1.0,
-      child: ShaderMask(
-        shaderCallback: (bounds) => const LinearGradient(
-          colors: [Color.fromARGB(255, 167, 77, 247), Color.fromARGB(255, 102, 41, 223)], // violeta futurista
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ).createShader(bounds),
-        child: Text(
-          'Modo Confidencial - Somente os escolhidos podem ver.',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white, // necessário para o shader
-            shadows: [
-              Shadow(
-                blurRadius: 8,
-                color: Colors.black54,
-                offset: Offset(0, 2),
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: appBarColor,
+        title: AnimatedOpacity(
+          duration: const Duration(seconds: 2),
+          opacity: 1.0,
+          child: ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color.fromARGB(255, 167, 77, 247), Color.fromARGB(255, 102, 41, 223)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(bounds),
+            child: Text(
+              'Modo Confidencial - Somente os escolhidos podem ver.',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 8,
+                    color: Colors.black54,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
-    ),
-    leading: IconButton(
-      icon: Icon(Icons.arrow_back, color: textColor),
-      onPressed: () => Navigator.pop(context),
-    ),
-  ),
-  body: passwords.isEmpty
-      ? Center(child: Text('Nenhuma senha confidencial ainda.', style: TextStyle(color: textColor)))
-      : ListView.builder(
-          itemCount: passwords.length,
-          itemBuilder: (context, i) {
-            final p = passwords[i];
-            return ListTile(
-              leading: Icon(Icons.key, color: textColor),
-              title: Text(p.siteName, style: TextStyle(color: textColor)),
-              subtitle: Text(p.username, style: TextStyle(color: textColor)),
-              onTap: () => addPasswordDialog(editing: p),
-              trailing: IconButton(
-                icon: Icon(Icons.delete, color: Colors.redAccent),
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      backgroundColor: isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar,
-                      title: Text('Excluir senha', style: TextStyle(color: textColor)),
-                      content: Text('Tem certeza que deseja excluir esta senha?', style: TextStyle(color: textColor)),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text('Cancelar', style: TextStyle(color: textColor)),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ConfidentialColors.buttonPrimary,
-                            foregroundColor: ConfidentialColors.buttonText,
-                          ),
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Excluir'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    await PasswordService.deletePassword(p.id);
-                    loadPasswords();
-                  }
-                },
-              ),
-            );
-          },
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: textColor),
+          onPressed: () => Navigator.pop(context),
         ),
-  floatingActionButton: FloatingActionButton(
-    onPressed: () => addPasswordDialog(),
-    backgroundColor: ConfidentialColors.buttonPrimary,
-    foregroundColor: Colors.white,
-    child: const Icon(Icons.add),
-  ),
-);
+      ),
+      body: passwords.isEmpty
+          ? Center(child: Text('Nenhuma senha confidencial ainda.', style: TextStyle(color: textColor)))
+          : ListView.builder(
+              itemCount: passwords.length,
+              itemBuilder: (context, i) {
+                final p = passwords[i];
+                return ListTile(
+                  leading: Icon(Icons.key, color: textColor),
+                  title: Text(p.siteName, style: TextStyle(color: textColor)),
+                  subtitle: Text(p.username, style: TextStyle(color: textColor)),
+                  onTap: () => addPasswordDialog(editing: p),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          backgroundColor: isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar,
+                          title: Text('Excluir senha', style: TextStyle(color: textColor)),
+                          content: Text('Tem certeza que deseja excluir esta senha?', style: TextStyle(color: textColor)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text('Cancelar', style: TextStyle(color: textColor)),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: ConfidentialColors.buttonPrimary,
+                                foregroundColor: ConfidentialColors.buttonText,
+                              ),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Excluir'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await PasswordService.deletePassword(p.id);
+                        loadPasswords();
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => addPasswordDialog(),
+        backgroundColor: ConfidentialColors.buttonPrimary,
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
+      ),
+    );
   }
 }
