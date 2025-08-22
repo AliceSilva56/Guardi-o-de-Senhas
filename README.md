@@ -1,18 +1,31 @@
 📖 Guardião de Senhas – Roadmap
 
-🟢 Últimas Atualizações 21/08/2025
+🟢 Últimas Atualizações 22/08/2025
 
 Coloquei para o sistema receber e chamar o usuário pelo nome fornecido, no registro e também na tela principal
 
-No Modo Confidencial
+(CONCLUIDO) No Modo Confidencial
 
 Alterei completamente as cores e vibe do app quando ativado, exibi apenas senhas confidenciais.
 
+(CONCLUIDO)👤 Personalização do Usuário
+
+Após o registro, chamar o usuário pelo nome informado.
+
+Exibir o nome também dentro da main_screen.dart.
+
+(Novo)
+
+Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e versa, e mostrar as categorias no modo confidencial
 
 ---
+
+
+Colocar para mostrar as mesma categorias do modo normal no modo confidencial também
+
 Concertar a tela que pergunta se quer biometria, pois esta somente com o 'não agora'
 
-Fazer o sistema receber as coisas com enter também
+Fazer o sistema receber as coisas com enter também(Login, registro, adicionar senhas, no mod normal e no modo confidencial)
 
 Após o primeiro contato do usário ao aplicativo deve ir para tela de login, acredito que vamos fazer ela receber o usuário com boas-vindas de voltas e mas algo com mais personalização
 
@@ -23,14 +36,6 @@ Após o primeiro contato do usário ao aplicativo deve ir para tela de login, ac
 Bug de navegação: ao iniciar, o app mostra uma seta e sai, como se entrasse duas vezes na main_screen.dart.
 
 ---
-
-(CONCLUIDO)👤 Personalização do Usuário
-
-Após o registro, chamar o usuário pelo nome informado.
-
-Exibir o nome também dentro da main_screen.dart.
-
-
 
 ---
 
