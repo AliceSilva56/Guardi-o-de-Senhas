@@ -37,60 +37,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            TextField(
-              controller: _nameController,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'Nome',
-                filled: true,
-                fillColor: inputFill,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _emailController,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'E-mail',
-                filled: true,
-                fillColor: inputFill,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _passController,
-              obscureText: true,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'Senha',
-                filled: true,
-                fillColor: inputFill,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.buttonPrimary,
-                foregroundColor: AppColors.buttonText,
-              ),
-              onPressed: () {
-                final name = _nameController.text.trim();
-                if (name.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Informe seu nome')),
-                  );
-                  return;
-                }
-                // Aqui você salvaria de fato (Hive/secure storage/API).
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
-                );
-              },
-              child: const Text('Concluir Cadastro'),
+  TextField(
+    controller: _nameController,
+    style: TextStyle(color: textColor),
+    autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
+    decoration: InputDecoration(
+      labelText: 'Nome',
+      filled: true,
+      fillColor: inputFill,
+      border: const OutlineInputBorder(),
+    ),
+    onSubmitted: (_) {
+      FocusScope.of(context).nextFocus(); // 🔹 Alteração: Enter vai pro próximo campo
+    },
+  ),
+  const SizedBox(height: 12),
+  TextField(
+    controller: _emailController,
+    style: TextStyle(color: textColor),
+    decoration: InputDecoration(
+      labelText: 'E-mail',
+      filled: true,
+      fillColor: inputFill,
+      border: const OutlineInputBorder(),
+    ),
+    onSubmitted: (_) {
+      FocusScope.of(context).nextFocus(); // 🔹 Alteração: Enter vai pro próximo campo
+    },
+  ),
+  const SizedBox(height: 12),
+  TextField(
+    controller: _passController,
+    obscureText: true,
+    style: TextStyle(color: textColor),
+    decoration: InputDecoration(
+      labelText: 'Senha',
+      filled: true,
+      fillColor: inputFill,
+      border: const OutlineInputBorder(),
+    ),
+    onSubmitted: (_) {
+      final name = _nameController.text.trim(); // 🔹 Alteração: Enter já conclui o cadastro
+      if (name.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informe seu nome')),
+        );
+        return;
+      }
+      // Aqui você salvaria de fato (Hive/secure storage/API).
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
+      );
+    },
+  ),
+  const SizedBox(height: 20),
+  ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: AppColors.buttonPrimary,
+      foregroundColor: AppColors.buttonText,
+    ),
+    onPressed: () {
+      final name = _nameController.text.trim();
+      if (name.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informe seu nome')),
+        );
+        return;
+      }
+      // Aqui você salvaria de fato (Hive/secure storage/API).
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
+      );
+    },
+    child: const Text('Concluir Cadastro'),
             ),
           ],
         ),

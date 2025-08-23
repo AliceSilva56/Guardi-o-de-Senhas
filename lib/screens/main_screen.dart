@@ -10,6 +10,8 @@ import 'category_screen.dart';
 import 'confidencial_screen.dart';
 import 'settings_screen.dart';
 import '../theme/app_colors.dart';
+import '../utils/category_info.dart';
+
 
 class MainScreen extends StatefulWidget {
   final String? userName; // ← acréscimo: nome opcional
@@ -24,19 +26,6 @@ class _MainScreenState extends State<MainScreen> {
   List<PasswordModel> passwords = [];
   String searchQuery = '';
   bool showConfidential = false;
-
-  final Map<String, String> categoryInfo = {
-    'Pessoal': 'Documentos, cadastros gerais, compras online',
-    'Profissional': 'Email corporativo, sistemas de trabalho, intranet, cursos',
-    'Bancos e Finanças': 'Contas bancárias, cartões, investimentos, PayPal, Pix',
-    'Redes Sociais': 'Instagram, Facebook, Twitter, etc.',
-    'Jogos': 'Steam, PlayStation, Xbox, Nintendo, jogos mobile',
-    'Streaming e Assinaturas': 'Netflix, Spotify, Amazon Prime, Disney+, etc.',
-    'Compras Online': 'Mercado Livre, Shopee, Amazon, Shein, etc.',
-    'Serviços': 'Conta de luz, água, telefone, internet, provedores',
-    'Saúde': 'Planos de saúde, apps de treino, farmácias',
-    'Segurança': 'Autenticadores, cofres de senha, backups',
-  };
 
 
   @override
@@ -204,6 +193,7 @@ class _MainScreenState extends State<MainScreen> {
                   controller: siteController,
                   textCapitalization: TextCapitalization.sentences,
                   style: TextStyle(color: textColor),
+                   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
                   decoration: InputDecoration(
                     labelText: 'Site/Serviço',
                     labelStyle: TextStyle(color: secondaryTextColor),
@@ -281,6 +271,7 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     ],
                   ),
+                  // adiciona um espaçamento se a força da senha for exibida
                 const SizedBox(height: 8),
                 if (forceCategory == null) ...[
                   DropdownButtonFormField<String>(
@@ -296,6 +287,7 @@ class _MainScreenState extends State<MainScreen> {
                         }
                       });
                     },
+                  // Adiciona o campo de descrição da categoria
                     decoration: InputDecoration(
                       labelText: 'Categoria',
                       errorText: categoryError,
@@ -317,6 +309,7 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     ),
                 ] else ...[
+
                   TextField(
                     controller: categoryController,
                     readOnly: true,
@@ -415,31 +408,45 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       title: AnimatedOpacity(
-        duration: const Duration(seconds: 2),
-        opacity: 1.0,
-        child: ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [Color.fromARGB(255, 167, 77, 247), Color.fromARGB(255, 102, 41, 223)], // violeta futurista
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ).createShader(bounds),
-          child: Text(
-            'Os pergaminhos de senha aguardam, $displayName',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white, // branco p/ shader aplicar
-              shadows: [
-                Shadow(
-                  blurRadius: 8,
-                  color: Colors.black54,
-                  offset: Offset(0, 2),
+        duration: const Duration(seconds: 2), // animação suave
+        opacity: 1.0, // sempre visível
+        child: ShaderMask( // efeito de gradiente no texto
+  shaderCallback: (bounds) { // cria o gradiente
+    final isDark = Theme.of(context).brightness == Brightness.dark; // verifica tema
+ 
+    return LinearGradient(
+      colors: isDark
+          ? const [
+              Color.fromARGB(255, 167, 77, 247), // violeta futurista
+              Color.fromARGB(255, 102, 41, 223), // azul escuro
+            ]
+          : const [
+               Color.fromARGB(255, 203, 147, 252), // violeta futurista
+              Color.fromARGB(255, 143, 150, 247), // azul escuro
+            ],
+      begin: Alignment.topLeft, // direção do gradiente
+      end: Alignment.bottomRight, // direção do gradiente
+    ).createShader(bounds);
+  },
+  child: Text(
+    'Os pergaminhos de senha aguardam, $displayName',
+    style: const TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+      color: Colors.white, // precisa ser branco p/ Shader aplicar
+      shadows: [
+        Shadow(
+          blurRadius: 8,
+          color: Color.fromARGB(136, 105, 105, 105), // sombra sutil
+          offset: Offset(0, 2),
+
                 )
               ],
             ),
           ),
         ),
       ),
+      
       // Ícones de ação na AppBar
       // Ícone para mostrar/ocultar senhas confidenciais
 
@@ -473,6 +480,7 @@ actions: [
             title: Text('Acesso Confidencial', style: TextStyle(color: titleColor)),
             content: TextField(
               controller: _passwordController,
+               autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
               obscureText: true,
               style: TextStyle(color: titleColor),
               decoration: InputDecoration(

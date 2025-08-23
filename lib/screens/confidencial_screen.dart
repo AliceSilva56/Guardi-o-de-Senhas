@@ -1,8 +1,11 @@
+//Arquivo: lib/screens/confidencial_screen.dart
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/password_model.dart';
 import '../services/password_service.dart';
 import '../theme/app_theme_confidential.dart';
+import '../utils/category_info.dart';
+
 
 class ConfidencialScreen extends StatefulWidget {
   const ConfidencialScreen({super.key});
@@ -62,127 +65,138 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
           backgroundColor: isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar,
           title: Text(editing == null ? 'Adicionar Senha' : 'Editar Senha', style: TextStyle(color: textColor)),
           content: SingleChildScrollView(
-            child: Column(
-              children: [
-                // campo site
-                TextField(
-                  controller: siteController,
-                  textCapitalization: TextCapitalization.sentences,
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: 'Site/Serviço',
-                    labelStyle: TextStyle(color: secondaryTextColor),
-                    filled: true,
-                    fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // campo usuário
-                TextField(
-                  controller: userController,
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: 'Usuário/Email',
-                    errorText: userError,
-                    filled: true,
-                    fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // campo senha
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: passController,
-                        obscureText: obscurePassword,
-                        onChanged: (v) => updateStrength(v, innerSetState),
-                        style: TextStyle(color: textColor),
-                        decoration: InputDecoration(
-                          labelText: 'Senha',
-                          errorText: passError,
-                          filled: true,
-                          fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
-                          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
-                          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
-                        ),
-                      ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // campo site
+      TextField(
+        controller: siteController,
+        textCapitalization: TextCapitalization.sentences,
+        style: TextStyle(color: textColor),
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: 'Site/Serviço',
+          labelStyle: TextStyle(color: secondaryTextColor),
+          filled: true,
+          fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
+        ),
+      ),
+      const SizedBox(height: 8),
+      // campo usuário
+      TextField(
+        controller: userController,
+        style: TextStyle(color: textColor),
+        decoration: InputDecoration(
+          labelText: 'Usuário/Email',
+          errorText: userError,
+          filled: true,
+          fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
+        ),
+      ),
+      const SizedBox(height: 8),
+      // campo senha
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: passController,
+              obscureText: obscurePassword,
+              onChanged: (v) => updateStrength(v, innerSetState),
+              style: TextStyle(color: textColor),
+              decoration: InputDecoration(
+                labelText: 'Senha',
+                errorText: passError,
+                filled: true,
+                fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.shuffle, color: ConfidentialColors.buttonPrimary),
+            tooltip: 'Gerar Senha',
+            onPressed: () {
+              final gen = PasswordService.generatePassword(length: 16);
+              passController.text = gen;
+              updateStrength(gen, innerSetState);
+            },
+          ),
+          IconButton(
+            icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off, color: ConfidentialColors.buttonPrimary),
+            tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
+            onPressed: () => innerSetState(() => obscurePassword = !obscurePassword),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      // indicador de força
+      if (passController.text.isNotEmpty || strengthText.isNotEmpty)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Força: ${strengthText.isEmpty ? PasswordService.calculatePasswordStrength(passController.text)['text'] : strengthText}',
+                style: TextStyle(color: secondaryTextColor)),
+            const SizedBox(height: 4),
+            LinearProgressIndicator(
+              value: (strengthLevel == 'weak') ? 0.33 : (strengthLevel == 'medium') ? 0.66 : 1.0,
+              minHeight: 6,
+              color: ConfidentialColors.primary,
+              backgroundColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
+            ),
+          ],
+        ),
+      const SizedBox(height: 8),
+      // campo categoria
+      DropdownButtonFormField<String>(
+        value: selectedCategory,
+        items: categoryInfo.keys
+            .map((cat) => DropdownMenuItem(
+                  value: cat,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(cat, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+                        Text(categoryInfo[cat]!, style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                      ],
                     ),
-                    IconButton(
-                      icon: Icon(Icons.shuffle, color: ConfidentialColors.buttonPrimary),
-                      tooltip: 'Gerar Senha',
-                      onPressed: () {
-                        final gen = PasswordService.generatePassword(length: 16);
-                        passController.text = gen;
-                        updateStrength(gen, innerSetState);
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off, color: ConfidentialColors.buttonPrimary),
-                      tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
-                      onPressed: () => innerSetState(() => obscurePassword = !obscurePassword),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // indicador de força
-                if (passController.text.isNotEmpty || strengthText.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Força: ${strengthText.isEmpty ? PasswordService.calculatePasswordStrength(passController.text)['text'] : strengthText}',
-                        style: TextStyle(color: secondaryTextColor),
-                      ),
-                      const SizedBox(height: 4),
-                      LinearProgressIndicator(
-                        value: (strengthLevel == 'weak') ? 0.33 : (strengthLevel == 'medium') ? 0.66 : 1.0,
-                        minHeight: 6,
-                        color: ConfidentialColors.primary,
-                        backgroundColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
-                      ),
-                    ],
                   ),
-                const SizedBox(height: 8),
-                // campo categoria (agora Dropdown igual ao main_screen)
-                DropdownButtonFormField<String>(
-                  value: selectedCategory,
-                  items: ['Pessoal', 'Trabalho', 'Bancos', 'Outros']
-                      .map((cat) => DropdownMenuItem(
-                            value: cat,
-                            child: Text(cat, style: TextStyle(color: textColor)),
-                          ))
-                      .toList(),
-                  onChanged: (val) => innerSetState(() => selectedCategory = val!),
-                  decoration: InputDecoration(
-                    labelText: 'Categoria',
-                    errorText: categoryError,
-                    filled: true,
-                    fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
-                  ),
-                  dropdownColor: isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar,
-                ),
-                const SizedBox(height: 8),
-                // campo notas
-                TextField(
-                  controller: notesController,
-                  textCapitalization: TextCapitalization.sentences,
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: 'Notas',
-                    filled: true,
-                    fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
-                  ),
-                  maxLines: 3,
-                ),
+                ))
+            .toList(),
+        onChanged: (val) => innerSetState(() => selectedCategory = val!),
+        decoration: InputDecoration(
+          labelText: 'Categoria',
+          errorText: categoryError,
+          filled: true,
+          fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
+        ),
+        dropdownColor: isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar,
+      ),
+      const SizedBox(height: 8),
+      // campo notas
+      TextField(
+        controller: notesController,
+        textCapitalization: TextCapitalization.sentences,
+        style: TextStyle(color: textColor),
+        decoration: InputDecoration(
+          labelText: 'Notas',
+          filled: true,
+          fillColor: isDark ? ConfidentialColors.darkInputBackground : ConfidentialColors.lightInputBackground,
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.inputBorder)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: ConfidentialColors.primary, width: 2)),
+        ),
+        maxLines: 3,
+      ),
+
               ],
             ),
           ),
@@ -240,23 +254,36 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
         title: AnimatedOpacity(
           duration: const Duration(seconds: 2),
           opacity: 1.0,
-          child: ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color.fromARGB(255, 167, 77, 247), Color.fromARGB(255, 102, 41, 223)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ).createShader(bounds),
-            child: Text(
-              'Modo Confidencial - Somente os escolhidos podem ver.',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [
-                  Shadow(
-                    blurRadius: 8,
-                    color: Colors.black54,
-                    offset: Offset(0, 2),
+
+           child: ShaderMask( // efeito de gradiente no texto
+  shaderCallback: (bounds) { // cria o gradiente
+    final isDark = Theme.of(context).brightness == Brightness.dark; // verifica tema
+ 
+    return LinearGradient(
+      colors: isDark
+          ? const [ // cores para tema escuro
+              Color.fromARGB(255, 167, 77, 247), // violeta futurista
+              Color.fromARGB(255, 102, 41, 223), // azul escuro
+            ]
+          : const [ // cores para tema claro
+               Color.fromARGB(255, 203, 147, 252), // violeta claro
+              Color.fromARGB(255, 143, 150, 247), // azul claro
+            ],
+      begin: Alignment.topLeft, // direção do gradiente
+      end: Alignment.bottomRight, // direção do gradiente
+    ).createShader(bounds);
+  },
+  child: Text(
+    'Modo Confidencial - Somente os escolhidos podem ver.',
+    style: const TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+      color: Colors.white, // precisa ser branco p/ Shader aplicar
+      shadows: [
+        Shadow(
+          blurRadius: 8,
+          color: Color.fromARGB(136, 105, 105, 105), // sombra sutil
+          offset: Offset(0, 2),
                   ),
                 ],
               ),

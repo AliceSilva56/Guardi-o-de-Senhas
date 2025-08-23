@@ -43,29 +43,43 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+
               TextField(
-                controller: masterPasswordController,
-                obscureText: _obscurePassword,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: 'Senha Mestra',
-                  labelStyle: TextStyle(color: secondaryTextColor),
-                  filled: true,
-                  fillColor: inputFillColor,
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: secondaryTextColor,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
+  controller: masterPasswordController,
+  obscureText: _obscurePassword,
+   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
+  textInputAction: TextInputAction.done, // <- adiciona essa linha // Faz o Enter do teclado
+  onSubmitted: (_) { // <- e essa
+    if (masterPasswordController.text.trim() == '1234') {
+      Navigator.pushReplacementNamed(context, '/main');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Senha incorreta')),
+      );
+    }
+  },
+  
+  style: TextStyle(color: textColor),
+  decoration: InputDecoration(
+    labelText: 'Senha Mestra',
+    labelStyle: TextStyle(color: secondaryTextColor),
+    filled: true,
+    fillColor: inputFillColor,
+    border: const OutlineInputBorder(),
+    suffixIcon: IconButton(
+      icon: Icon(
+        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+        color: secondaryTextColor,
+      ),
+      onPressed: () {
+        setState(() {
+          _obscurePassword = !_obscurePassword;
                       });
                     },
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
 
               // Linha com Entrar e Cadastrar
@@ -112,6 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Text(
                   'Acesso Biométrico 👆',
                   style: TextStyle(color: secondaryTextColor),
+                  // TODO: Implementar autenticação biométrica real
                 ),
               ),
             ],

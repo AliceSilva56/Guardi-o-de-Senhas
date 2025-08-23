@@ -134,6 +134,12 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         ),
         TextField(
           controller: nomeCtrl,
+          textInputAction: TextInputAction.done, // <- adicionado
+  onSubmitted: (_) { // <- adicionado
+    if (nomeCtrl.text.trim().isEmpty) return;
+    nextPage();
+  },
+   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
           decoration: InputDecoration(
             hintText: "Seu nome",
             filled: true,
@@ -171,6 +177,13 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         _title("Escolha sua chave mestra$saudacao"),
         TextField(
           controller: senhaCtrl,
+          textInputAction: TextInputAction.done, // <- adicionado
+  onSubmitted: (_) { // <- adicionado
+  
+    if (senhaCtrl.text.length < 6) return;
+    nextPage();
+  },
+   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
           obscureText: true,
           decoration: InputDecoration(
             hintText: "Senha mestra",
@@ -236,6 +249,12 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         const SizedBox(height: 12),
         TextField(
           controller: respostaCtrl,
+          textInputAction: TextInputAction.done, // <- adicionado
+  onSubmitted: (_) { // <- adicionado
+    if (pergunta.isEmpty || respostaCtrl.text.trim().isEmpty) return;
+    nextPage();
+  },
+   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
           decoration: const InputDecoration(hintText: "Resposta"),
         ),
         const SizedBox(height: 20),
@@ -254,45 +273,61 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     ));
   }
 
-  // TELA 5 - Biometria
-  Widget _biometria() {
-    final nome = nomeCtrl.text.trim();
-    final saudacao = nome.isEmpty ? "" : ", $nome";
-    return _wrapMagic(Column(
-      children: [
-        Image.asset(
-          "assets/animation/guardiao_biometria_transparente.png",
-          height: 120,
-        ),
-        const SizedBox(height: 16),
-        _title("Deseja usar biometria para acesso rápido$saudacao?"),
-        const Text(
-          "Vejo que sua magia é poderosa. Deseja usar sua própia marca(biometria) para acessar seu cofre mais rápido?",
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.buttonSecondary,
-                  foregroundColor: AppColors.buttonText,
-                ),
-                onPressed: () {
-                  biometriaEscolha = false;
-                  nextPage();
-                },
-                child: const Text("Não agora"),
+// TELA 5 - Biometria
+Widget _biometria() {
+  final nome = nomeCtrl.text.trim();
+  final saudacao = nome.isEmpty ? "" : ", $nome";
+  return _wrapMagic(Column(
+    children: [
+      Image.asset(
+        "assets/animation/guardiao_biometria_transparente.png",
+        height: 120,
+      ),
+      const SizedBox(height: 16),
+      _title("Deseja usar biometria para acesso rápido$saudacao?"),
+      const Text(
+        "Vejo que sua magia é poderosa. Deseja usar sua própria marca (biometria) para acessar seu cofre mais rápido?",
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 8),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.buttonSecondary,
+                foregroundColor: AppColors.buttonText,
               ),
+              onPressed: () {
+                biometriaEscolha = false;
+                nextPage();
+              },
+              child: const Text("Não agora"),
             ),
-          ],
-        ),
-      ],
-    ));
-  }
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.buttonPrimary,
+                foregroundColor: AppColors.buttonText,
+              ),
+              onPressed: () {
+                biometriaEscolha = true;
+                // TODO: Implementar autenticação biométrica aqui
+                nextPage();
+              },
+              child: const Text("Sim, eu quero"),
+            ),
+          ),
+        ],
+      ),
+    ],
+  ));
+}
+
 
   // TELA 6 - Final
   Widget _finalizacao() {
