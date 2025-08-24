@@ -534,6 +534,7 @@ actions: [
       );
     },
   ),
+  
   //icon de configurações
   IconButton(
     icon: const Icon(Icons.settings),

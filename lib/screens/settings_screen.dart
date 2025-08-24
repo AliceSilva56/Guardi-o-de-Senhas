@@ -21,10 +21,11 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Text('Informações Básicas', style: Theme.of(context).textTheme.titleMedium),
           ),
+          // Opção de Perfil
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text('Perfil'),
-            subtitle: const Text('Nome, e-mail e foto de perfil'),
+            subtitle: const Text('Avatar, Nome, e-mail'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
           ),
           const Divider(),
@@ -282,7 +283,6 @@ class SettingsScreen extends StatelessWidget {
 }
 
 // ======================= PERFIL ========================
-// fazer a implementação do perfil
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -292,11 +292,20 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController nomeController = TextEditingController();
-  final TextEditingController apelidoController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
 
   final List<String> emojis = ['😀', '🦸‍♂️', '👩‍💻', '🧑‍🎨', '🦄'];
   String selectedEmoji = '😀';
+
+  @override
+  void initState() {
+    super.initState();
+
+    // ⚡ Aqui você pode puxar os dados reais do usuário
+    // Por enquanto coloquei como exemplo fixo
+    nomeController.text = "Usuário Teste";  
+    emailController.text = "usuario@email.com";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -304,9 +313,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(title: const Text('Perfil')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: ListView(
           children: [
-            Text('Escolha seu avatar:', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Escolha seu avatar:',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -319,7 +331,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.grey,
                         width: isSelected ? 3 : 1,
                       ),
                     ),
@@ -330,15 +344,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }).toList(),
             ),
             const SizedBox(height: 24),
-            TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome do usuário')),
+
+            // Nome do usuário
+            TextField(
+              controller: nomeController,
+              decoration: const InputDecoration(labelText: 'Nome do usuário'),
+            ),
             const SizedBox(height: 8),
-            TextField(controller: apelidoController, decoration: const InputDecoration(labelText: 'Apelido')),
-            const SizedBox(height: 8),
-            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'E-mail de recuperação'), keyboardType: TextInputType.emailAddress),
+
+            // Email
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
+            ),
             const SizedBox(height: 24),
+
             ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Perfil salvo!')));
+                // Aqui você salva o nome e email (ex: Hive, SharedPreferences, SQLite, Firebase)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Perfil salvo!')),
+                );
                 Navigator.pop(context);
               },
               child: const Text('Salvar'),
