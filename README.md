@@ -26,17 +26,22 @@ Fiz o sistema receber as coisas com enter também(Login, registro flow, registro
 Coloquei cor pra o modo claro na frase
 
 
+🟢 Últimas Atualizações 24/08/2025
 
+- Acertar o campo de categoria do modo confidencial
 
+- Concertar a tela que pergunta se quer biometria, pois esta somente com o 'não agora'
+
+- Criação do arquivo para salvar as funcionalidades do settings
+
+- 
  ---
 
- - Acertar o campo de categoria do modo confidencial
+ 
  
 - Melhorar o register_screen.dart (mantido simples)
 
-- Colocar para mostrar as mesma categorias do modo normal no modo confidencial também
-
-- Concertar a tela que pergunta se quer biometria, pois esta somente com o 'não agora'
+- Colocar para mostrar as mesma categorias do modo normal no modo confidencial também(Talvez)
 
 - Após o primeiro contato do usário ao aplicativo deve ir para tela de login, acredito que vamos fazer ela receber o usuário com boas-vindas de voltas e mas algo com mais personalização
 
