@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/password_service.dart';
 import '../main.dart';
+import '../services/settings_service.dart';
+
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -51,7 +53,14 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.fingerprint),
             title: const Text('Autenticação biométrica'),
             subtitle: const Text('Impressão digital ou reconhecimento facial'),
-            onTap: () {}, // implementar biometria
+            onTap: () async {
+
+  bool atual = await SettingsService.getBiometryEnabled();
+  await SettingsService.setBiometryEnabled(!atual);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Biometria ${!atual ? "ativada" : "desativada"}')),
+  );
+}, // implementar biometria
           ),
           const Divider(),
 
@@ -66,12 +75,6 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Claro, escuro ou sistema'),
             onTap: () => _showThemeDialog(context),
           ),
-          ListTile(
-            leading: const Icon(Icons.image),
-            title: const Text('Imagem de fundo'),
-            subtitle: const Text('Escolha uma imagem para o fundo'),
-            onTap: () => _showBackgroundDialog(context),
-          ),
           const Divider(),
 
           // Dados e Backup
@@ -80,9 +83,20 @@ class SettingsScreen extends StatelessWidget {
             child: Text('Dados e Backup', style: Theme.of(context).textTheme.titleMedium),
           ),
           ListTile(
-            leading: const Icon(Icons.history),
+            leading: const Icon(Icons.history), // Ícone de histórico
             title: const Text('Último backup realizado'), // Exibe a data do último backup
-            subtitle: Text(_getLastBackupInfo()),
+            subtitle: FutureBuilder<String>( // Busca a data do último backup
+              future: _getLastBackupInfo(), // Função que busca a data do último backup
+              builder: (context, snapshot) { // Constrói o widget com base no estado da Future
+                if (snapshot.connectionState == ConnectionState.waiting) { // Enquanto espera a Future completar
+                  return const Text('Carregando...'); // Exibe um texto de carregamento
+                } else if (snapshot.hasError) {
+                  return const Text('Erro ao carregar backup'); // Exibe um texto de erro
+                } else {
+                  return Text(snapshot.data ?? 'Nunca realizado'); // Exibe a data do último backup ou 'Nunca realizado' se for nulo
+                }
+              },
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.backup),
@@ -98,8 +112,8 @@ class SettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.delete),
-            title: const Text('Limpar dados'),
-            subtitle: const Text('Excluir todos os dados do aplicativo'),
+            title: const Text('Limpar dados'), // Limpa todos os dados do aplicativo // fazer a implementação da limpeza de dados
+            subtitle: const Text('Excluir todos os dados do aplicativo'), // Excluir todos os dados do aplicativo
             onTap: () {
               // PasswordService.clearAllData();
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Todos os dados foram excluídos')));
@@ -127,8 +141,9 @@ class SettingsScreen extends StatelessWidget {
               title: Text(option),
               value: option,
               groupValue: currentTheme,
-              onChanged: (val) {
+              onChanged: (val) async {
                 themeController.setThemeMode(val!);
+                await SettingsService.setThemeMode(val); // 🔥 Salva no Hive
                 Navigator.pop(context);
               },
             );
@@ -138,49 +153,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // ======================= BACKGROUND ========================
-  // Fazer a implementação do background
-
-  void _showBackgroundDialog(BuildContext context) async {
-    final images = await BackgroundController.getAvailableImages();
-    String? currentImage = BackgroundController.backgroundImage; // leitura direta
-
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Escolher imagem de fundo'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Wrap(
-            spacing: 12,
-            children: images.map((imgPath) {
-              final isSelected = imgPath == currentImage;
-              return GestureDetector(
-                onTap: () {
-                  BackgroundController.setBackground(imgPath); // chamada direta
-                  Navigator.pop(context);
-                },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Opacity(
-                      opacity: 0.6,
-                      child: Image.asset(imgPath, width: 80, height: 80, fit: BoxFit.cover),
-                    ),
-                    if (isSelected)
-                      const Icon(Icons.check_circle, color: Colors.green, size: 32),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        ],
-      ),
-    );
-  }
 
   // ======================= SENHA ========================
   // Configura a senha mestra
@@ -272,14 +244,24 @@ class SettingsScreen extends StatelessWidget {
 
   // ======================= BACKUP ========================
   void _exportBackup(BuildContext context) async {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup exportado')));
-  }
+  await SettingsService.setBackupStatus(done: true, location: 'local');
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Backup exportado')),
+  );
+}
 
-  void _importBackup(BuildContext context) async {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup importado')));
-  }
+void _importBackup(BuildContext context) async {
+  await SettingsService.setBackupStatus(done: true, location: 'importado');
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Backup importado')),
+  );
+}
 
-  String _getLastBackupInfo() => 'Nunca realizado';
+Future<String> _getLastBackupInfo() async {
+  final status = await SettingsService.getBackupStatus();
+  return status['done'] ? "Último backup: ${status['location']}" : "Nunca realizado";
+}
+
 }
 
 // ======================= PERFIL ========================
@@ -298,14 +280,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String selectedEmoji = '😀';
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
+  _loadProfile();
+}
 
-    // ⚡ Aqui você pode puxar os dados reais do usuário
-    // Por enquanto coloquei como exemplo fixo
-    nomeController.text = "Usuário Teste";  
-    emailController.text = "usuario@email.com";
-  }
+void _loadProfile() async {
+  final profile = await SettingsService.getProfile();
+  setState(() {
+    selectedEmoji = profile['avatar']!.isNotEmpty ? profile['avatar']! : '😀';
+    nomeController.text = profile['name'] ?? '';
+    emailController.text = profile['email'] ?? '';
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +349,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
 
             ElevatedButton(
-              onPressed: () {
+              onPressed: ()async {
+    await SettingsService.setProfile(
+      avatarPath: selectedEmoji,
+      name: nomeController.text,
+      email: emailController.text,
+    );
+
+                
                 // Aqui você salva o nome e email (ex: Hive, SharedPreferences, SQLite, Firebase)
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Perfil salvo!')),
