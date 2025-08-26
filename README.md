@@ -1,5 +1,11 @@
 📖 Guardião de Senhas – Roadmap
 
+🟢 Últimas Atualizações 26/08/2025
+
+- Atualização do código para que a tela de login, registro flow reconheça a mudança de senhas pelo settings service
+
+- Criação do arquivo change_passaword_screen para dar o comando de mudar a senha mestra
+
 🟢 Últimas Atualizações 25/08/2025
 
 - Criação do settings_services e algumas funcionalidas
@@ -41,6 +47,7 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 
  ---
 
+- Colocar o reconhecimento de senhas no registro também
  
 - Ligar a troca de senhas do modo confidencia e a da senha mestra ao login e a tela confidencial
 

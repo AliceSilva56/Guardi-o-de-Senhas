@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import '../theme/app_colors.dart';
+import '../services/settings_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,12 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
   obscureText: _obscurePassword,
    autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
   textInputAction: TextInputAction.done, // <- adiciona essa linha // Faz o Enter do teclado
-  onSubmitted: (_) { // <- e essa
-    if (masterPasswordController.text.trim() == '1234') {
-      Navigator.pushReplacementNamed(context, '/main');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Senha incorreta')),
+ onSubmitted: (_) async {
+  final ok = await SettingsService.verifyMasterPassword(masterPasswordController.text.trim());
+  if (ok) {
+    Navigator.pushReplacementNamed(context, '/main');
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Senha incorreta')),
       );
     }
   },
@@ -91,15 +93,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: () {
-                      if (masterPasswordController.text.trim() == '1234') {
-                        Navigator.pushReplacementNamed(context, '/main');
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Senha incorreta')),
-                        );
-                      }
-                    },
+                    onPressed: () async {
+  final ok = await SettingsService.verifyMasterPassword(masterPasswordController.text.trim());
+  if (ok) {
+    Navigator.pushReplacementNamed(context, '/main');
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Senha incorreta')),
+    );
+  }
+},
+
                     child: const Text('Entrar'),
                   ),
                   OutlinedButton(

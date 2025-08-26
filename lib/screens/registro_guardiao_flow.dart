@@ -3,10 +3,13 @@
 // é guiado por uma série de etapas para criar uma conta, definir uma senha mestra,
 // escolher uma pergunta de segurança e decidir sobre o uso de biometria.
 import 'package:flutter/material.dart';
-
+import 'package:hive/hive.dart';
+import '../services/settings_service.dart';
 import '../theme/app_colors.dart';
 import 'main_screen.dart';
 
+
+final _settings = SettingsService();
 class RegistroGuardiaoFlow extends StatefulWidget {
   const RegistroGuardiaoFlow({super.key});
 
@@ -329,37 +332,52 @@ Widget _biometria() {
 }
 
 
-  // TELA 6 - Final
-  Widget _finalizacao() {
-    final nome = nomeCtrl.text.trim();
-    return _wrapMagic(Column(
-      children: [
-        Image.asset(
-          "assets/animation/guardiao_final_transparente.png",
-          height: 150,
+// TELA 6 - Final
+Widget _finalizacao() {
+  final nome = nomeCtrl.text.trim();
+  return _wrapMagic(Column(
+    children: [
+      Image.asset(
+        "assets/animation/guardiao_final_transparente.png",
+        height: 150,
+      ),
+      const SizedBox(height: 16),
+      _title(
+          "Perfeito${nome.isEmpty ? "!" : ", $nome!"} Agora você está pronto."),
+      const Text(
+        "Suas senhas estão seguras sob minha proteção. Vamos juntos nesta jornada!",
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 24),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.buttonPrimary,
+          foregroundColor: AppColors.buttonText,
         ),
-        const SizedBox(height: 16),
-        _title(
-            "Perfeito${nome.isEmpty ? "!" : ", $nome!"} Agora você está pronto."),
-        const Text(
-          "Suas senhas estão seguras sob minha proteção. Vamos juntos nesta jornada!",
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.buttonPrimary,
-            foregroundColor: AppColors.buttonText,
-          ),
-          onPressed: () {
-            // Navega para a tela principal já chamando pelo nome informado
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => MainScreen(userName: nome),
-              ),
-            );
-          },
-          child: const Text("Entrar no Cofre"),
+        onPressed: () async {
+          // 🔹 Persistir dados no SettingsService
+          await _settings.setLoginPassword(senhaCtrl.text.trim());
+          await _settings.setMasterPassword(senhaCtrl.text.trim()); // redundante mas garante
+          await SettingsService.setProfile(
+            avatarPath: "",
+            name: nome,
+            email: "",
+          );
+          await SettingsService.setBiometryEnabled(biometriaEscolha);
+
+          // ⚡ TODO: salvar pergunta/resposta de segurança também
+          final box = await Hive.openBox(SettingsService.settingsBoxName);
+          await box.put("security_question", pergunta);
+          await box.put("security_answer", respostaCtrl.text.trim());
+
+          // Navega para a tela principal já chamando pelo nome informado
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => MainScreen(userName: nome),
+            ),
+          );
+        },
+        child: const Text("Entrar no Cofre"),
         ),
       ],
     ));

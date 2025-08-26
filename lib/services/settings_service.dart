@@ -12,24 +12,81 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart';
 
 class SettingsService {
-  static const String _masterPasswordKey = 'master_password';
-  static const String _confidentialPasswordKey = 'confidential_password';
-  static const String _themeModeKey = 'theme_mode';
-  static const String settingsBoxName = 'guardiao_settings';
-  static const String biometryKey = 'biometry_enabled';
-  static const String themeModeKey = 'theme_mode';
-  static const String backupStatusKey = 'backup_status';
-  static const String profileKey = 'user_profile';
+  static const String _masterPasswordKey = 'master_password'; // TODO: ideal: criptografar
+  static const String _confidentialPasswordKey = 'confidential_password'; // TODO: ideal: criptografar
+  static const String _themeModeKey = 'theme_mode'; // 0: system, 1: light, 2: dark
+  static const String settingsBoxName = 'guardiao_settings'; // Nome da box do Hive para configurações
+  static const String biometryKey = 'biometry_enabled'; // Habilitar/desabilitar biometria
+  static const String themeModeKey = 'theme_mode'; // Tema do aplicativo
+  static const String backupStatusKey = 'backup_status'; // Status do último backup
+  static const String profileKey = 'user_profile'; // Perfil do usuário
+  static const String _boxName = 'settingsBox';
+  static const String _keyMasterPassword = 'masterPassword';
+  static const String _settingsBox = 'settingsBox'; // Nome da box do Hive para configurações
+  static const String _loginPasswordKey = 'loginPassword'; // Chave para a senha de login
 
-  /// ---- SENHAS ----
-  Future<void> saveMasterPassword(String password) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_masterPasswordKey, password); // ideal: criptografar
+  Future<Box> _openBox() async {
+    return await Hive.openBox(_boxName);
   }
 
+  // Pega senha atual
   Future<String?> getMasterPassword() async {
+    final box = await _openBox();
+    return box.get(_keyMasterPassword);
+  }
+
+  // Define nova senha
+  Future<void> setMasterPassword(String password) async {
+    final box = await _openBox();
+    await box.put(_keyMasterPassword, password);
+  }
+
+/// -----------------------------
+  /// ---- LOGIN ---- 
+  /// -----------------------------
+Future<void> setLoginPassword(String password) async {
+    final box = await Hive.openBox(_settingsBox);
+    await box.put(_loginPasswordKey, password);
+  }
+
+  Future<String?> getLoginPassword() async {
+    final box = await Hive.openBox(_settingsBox);
+    return box.get(_loginPasswordKey);
+  }
+
+  Future<bool> validateLoginPassword(String password) async {
+    final box = await Hive.openBox(_settingsBox);
+    final saved = box.get(_loginPasswordKey);
+    return saved == password;
+  }
+
+  /// -----------------------------
+  /// ---- SENHAS ----
+  /// -----------------------------
+  
+static Future<void> setMasterPasswordStatic(String password) async {
+  final box = await Hive.openBox(_boxName);
+  await box.put('masterPassword', password);
+}
+
+static Future<String?> getMasterPasswordStatic() async {
+  final box = await Hive.openBox(_boxName);
+  return box.get('masterPassword');
+}
+
+static Future<bool> verifyMasterPassword(String password) async {
+  final saved = await getMasterPasswordStatic();
+  return saved != null && saved == password;
+}
+  Future<void> saveMasterPassword(String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_masterPasswordKey, password); ///TODO: ideal: criptografar
+  }
+
+  Future<String?> getMasterPasswordFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_masterPasswordKey);
+    
   }
 
   Future<void> saveConfidentialPassword(String password) async {
@@ -42,7 +99,9 @@ class SettingsService {
     return prefs.getString(_confidentialPasswordKey);
   }
 
+  /// ------------------
   /// ---- TEMA ----
+  /// ------------------
   Future<void> saveThemeMode(ThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_themeModeKey, mode.index);
