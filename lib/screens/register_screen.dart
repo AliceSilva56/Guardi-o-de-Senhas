@@ -1,6 +1,7 @@
 // Arquivo register_screen.dart (mantido simples)
 // Apenas acréscimo: após cadastrar, navegar para MainScreen chamando pelo nome.
 
+import '../services/settings_service.dart'; // 🔹 importa o serviço
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'main_screen.dart';
@@ -16,6 +17,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
+  final SettingsService _settingsService = SettingsService(); // 🔹 instância
+
 
   @override
   void dispose() {
@@ -76,18 +79,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       fillColor: inputFill,
       border: const OutlineInputBorder(),
     ),
-    onSubmitted: (_) {
-      final name = _nameController.text.trim(); // 🔹 Alteração: Enter já conclui o cadastro
-      if (name.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Informe seu nome')),
-        );
-        return;
-      }
-      // Aqui você salvaria de fato (Hive/secure storage/API).
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
+   onSubmitted: (_) async {
+  final name = _nameController.text.trim();
+  if (name.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Informe seu nome')),
+    );
+    return;
+  }
+  // 🔹 Agora salva a senha mestre
+  await _settingsService.setMasterPassword(_passController.text.trim());
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
       );
     },
   ),
@@ -97,18 +102,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: AppColors.buttonPrimary,
       foregroundColor: AppColors.buttonText,
     ),
-    onPressed: () {
-      final name = _nameController.text.trim();
-      if (name.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Informe seu nome')),
-        );
-        return;
-      }
-      // Aqui você salvaria de fato (Hive/secure storage/API).
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
+    onPressed: () async {
+  final name = _nameController.text.trim();
+  if (name.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Informe seu nome')),
+    );
+    return;
+  }
+  // 🔹 Agora salva a senha mestre
+  await _settingsService.setMasterPassword(_passController.text.trim());
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
       );
     },
     child: const Text('Concluir Cadastro'),

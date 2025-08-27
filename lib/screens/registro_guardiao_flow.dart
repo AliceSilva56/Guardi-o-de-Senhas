@@ -357,7 +357,7 @@ Widget _finalizacao() {
         onPressed: () async {
           // 🔹 Persistir dados no SettingsService
           await _settings.setLoginPassword(senhaCtrl.text.trim());
-          await _settings.setMasterPassword(senhaCtrl.text.trim()); // redundante mas garante
+          await _settings.setMasterPassword(senhaCtrl.text.trim()); // redundante mas garante  
           await SettingsService.setProfile(
             avatarPath: "",
             name: nome,

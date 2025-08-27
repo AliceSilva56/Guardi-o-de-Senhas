@@ -17,10 +17,12 @@ class ConfidencialScreen extends StatefulWidget {
 class _ConfidencialScreenState extends State<ConfidencialScreen> {
   List<PasswordModel> passwords = [];
 
+// Pega categorias existentes
   List<String> _existingCategories() {
   final box = PasswordService.getAllPasswords();
   final categories = <String>{};
 
+// Coleta categorias únicas
   for (var password in box) {
     if (password is PasswordModel) {
       categories.add(password.category);
@@ -30,19 +32,21 @@ class _ConfidencialScreenState extends State<ConfidencialScreen> {
   return categories.toList();
 }
 
-
+// Carrega senhas ao iniciar
   @override
   void initState() {
     super.initState();
     loadPasswords();
   }
 
+// Carrega senhas confidenciais
   void loadPasswords() {
     final all = PasswordService.searchPasswords('', includeConfidential: true);
     passwords = all.where((p) => p.confidential).toList(); // só as senhas confidenciais
     setState(() {});
   }
 
+// Diálogo para adicionar/editar senha
 Future<void> addPasswordDialog({PasswordModel? editing, String? forceCategory}) async {
     final siteController = TextEditingController(text: editing?.siteName ?? '');
     final userController = TextEditingController(text: editing?.username ?? '');
@@ -84,7 +88,7 @@ Future<void> addPasswordDialog({PasswordModel? editing, String? forceCategory}) 
         String getCategoryDescription() {
           return categoryInfo[categoryController.text] ?? '';
         }
-
+  
         return AlertDialog(
           backgroundColor: isDark ? ConfidentialColors.darkAppBar : ConfidentialColors.lightAppBar,
           title: Text(editing == null ? 'Adicionar Senha' : 'Editar Senha', style: TextStyle(color: textColor)),
@@ -96,7 +100,7 @@ Future<void> addPasswordDialog({PasswordModel? editing, String? forceCategory}) 
                   controller: siteController,
                   textCapitalization: TextCapitalization.sentences,
                   style: TextStyle(color: textColor),
-                   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
+                   autofocus: true, // 🔹 Alteração: já inicia com foco no campo Site/Serviço
                   decoration: InputDecoration(
                     labelText: 'Site/Serviço',
                     labelStyle: TextStyle(color: secondaryTextColor),
@@ -400,7 +404,7 @@ Future<void> addPasswordDialog({PasswordModel? editing, String? forceCategory}) 
               },
             ),
 
-            // botão adicionar senha
+            // Botão adicionar senha
       floatingActionButton: FloatingActionButton( 
         onPressed: () => addPasswordDialog(),
         backgroundColor: ConfidentialColors.buttonPrimary,

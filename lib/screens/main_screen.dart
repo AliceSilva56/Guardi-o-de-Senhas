@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/password_model.dart';
 import '../services/password_service.dart';
+import '../services/settings_service.dart';
 import 'category_screen.dart';
 import 'confidencial_screen.dart';
 import 'settings_screen.dart';
@@ -58,6 +59,7 @@ class _MainScreenState extends State<MainScreen> {
     final textColor = isDark ? Colors.white : Colors.black;
     final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
 
+// Diálogo para pedir a senha mestra
     final res = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -100,6 +102,7 @@ class _MainScreenState extends State<MainScreen> {
     return res ?? false;
   }
 
+// collecta categorias existentes
   Set<String> _existingCategories() => passwords.map((p) => p.category).toSet();
   int _countForCategory(String category) => passwords.where((p) => p.category == category).length;
 
@@ -140,6 +143,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+// Diálogo para adicionar/editar senha
   Future<void> addPasswordDialog({PasswordModel? editing, String? forceCategory}) async {
     final siteController = TextEditingController(text: editing?.siteName ?? '');
     final userController = TextEditingController(text: editing?.username ?? '');
@@ -396,6 +400,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+// Construção da interface frase
 @override
 Widget build(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -453,77 +458,80 @@ Widget build(BuildContext context) {
       
 actions: [
   IconButton(
-    icon: Icon(
-      Icons.lock, // faz sentido
-      color: textColor,
-    ),
-    tooltip: 'Modo Confidencial',
-    onPressed: () {
-      showDialog(
-        context: context,
-        builder: (context) {
-          final TextEditingController _passwordController =
-              TextEditingController();
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          final bgColor = isDark
-              ? AppColors.darkAppBar
-              : AppColors.lightAppBar;
-          final titleColor = isDark
-              ? AppColors.darkTextPrimary
-              : AppColors.lightTextPrimary;
-          final textFieldColor = isDark
-              ? AppColors.darkInputBackground
-              : AppColors.lightInputBackground;
+  icon: Icon(
+    Icons.lock, 
+    color: textColor,
+  ),
+  tooltip: 'Modo Confidencial',
+  onPressed: () {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final TextEditingController _passwordController =
+            TextEditingController();
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bgColor = isDark
+            ? AppColors.darkAppBar
+            : AppColors.lightAppBar;
+        final titleColor = isDark
+            ? AppColors.darkTextPrimary
+            : AppColors.lightTextPrimary;
+        final textFieldColor = isDark
+            ? AppColors.darkInputBackground
+            : AppColors.lightInputBackground;
 
-          return AlertDialog(
-            backgroundColor: bgColor,
-            title: Text('Acesso Confidencial', style: TextStyle(color: titleColor)),
-            content: TextField(
-              controller: _passwordController,
-               autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
-              obscureText: true,
-              style: TextStyle(color: titleColor),
-              decoration: InputDecoration(
-                hintText: 'Digite a senha',
-                hintStyle: TextStyle(color: AppColors.inputHint),
-                filled: true,
-                fillColor: textFieldColor,
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.inputBorder),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.inputBorder),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.buttonPrimary, width: 2),
-                ),
+        return AlertDialog(
+          backgroundColor: bgColor,
+          title: Text('Acesso Confidencial', style: TextStyle(color: titleColor)),
+          content: TextField(
+            controller: _passwordController,
+            autofocus: true,
+            obscureText: true,
+            style: TextStyle(color: titleColor),
+            decoration: InputDecoration(
+              hintText: 'Digite a senha',
+              hintStyle: TextStyle(color: AppColors.inputHint),
+              filled: true,
+              fillColor: textFieldColor,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.inputBorder),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.inputBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: AppColors.buttonPrimary, width: 2),
               ),
             ),
-            actions: [
-              TextButton(
-                child: Text('Cancelar', style: TextStyle(color: titleColor)),
-                onPressed: () => Navigator.pop(context),
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancelar', style: TextStyle(color: titleColor)),
+              onPressed: () => Navigator.pop(context),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.buttonPrimary,
+                foregroundColor: AppColors.buttonText,
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.buttonPrimary,
-                  foregroundColor: AppColors.buttonText,
-                ),
-                child: const Text('Entrar'),
-                onPressed: () {
-                  if (_passwordController.text == "1234") {
-                    
-                    // Senha correta → fecha popup e abre tela confidencial
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ConfidencialScreen(),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Senha incorreta!")),
+              // botão entrar no modo confidencial
+              child: const Text('Entrar'),
+              onPressed: () async {
+                final service = SettingsService();
+                final storedPassword = await service.getConfidentialPassword(); 
+                // 🔑 busca sempre a senha mais recente
+
+                if (_passwordController.text == storedPassword || _passwordController == "1234") {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ConfidencialScreen(),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Senha incorreta!")),
                     );
                   }
                 },
