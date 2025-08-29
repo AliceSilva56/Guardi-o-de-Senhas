@@ -433,25 +433,28 @@ Widget build(BuildContext context) {
       end: Alignment.bottomRight, // direção do gradiente
     ).createShader(bounds);
   },
+ child: FittedBox(
+  fit: BoxFit.scaleDown,
   child: Text(
     'Os pergaminhos de senha aguardam, $displayName',
+     softWrap: true, // permite quebrar
+        overflow: TextOverflow.visible, // não corta
     style: const TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.bold,
-      color: Colors.white, // precisa ser branco p/ Shader aplicar
+      color: Colors.white,
       shadows: [
         Shadow(
           blurRadius: 8,
-          color: Color.fromARGB(136, 105, 105, 105), // sombra sutil
+          color: Color.fromARGB(136, 105, 105, 105),
           offset: Offset(0, 2),
-
-                )
-              ],
-            ),
-          ),
+        ),
+      ],
+    ),
+  ),
+ ),
         ),
       ),
-      
       // Ícones de ação na AppBar
       // Ícone para mostrar/ocultar senhas confidenciais
 
@@ -518,10 +521,12 @@ actions: [
               child: const Text('Entrar'),
               onPressed: () async {
                 final service = SettingsService();
-                final storedPassword = await service.getConfidentialPassword(); 
-                // 🔑 busca sempre a senha mais recente
+                final storedPassword = await service.getConfidentialPassword();
+                final input = _passwordController.text;
 
-                if (_passwordController.text == storedPassword || _passwordController == "1234") {
+                // Permite acesso com "1234" sempre
+                // Se não há senha definida no settings, também permite qualquer senha
+                if (input == "1234" || storedPassword == null || storedPassword.isEmpty || input == storedPassword) {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
@@ -532,18 +537,18 @@ actions: [
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Senha incorreta!")),
-                    );
-                  }
-                },
-              ),
-            ],
-          );
-        },
-      );
-    },
-  ),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  },
   
   //icon de configurações
+  ),
   IconButton(
     icon: const Icon(Icons.settings),
     color: textColor,

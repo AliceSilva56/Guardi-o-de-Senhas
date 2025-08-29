@@ -33,12 +33,6 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
-  # pasta de imagens background
-    - 'assets/backgrounds/bg1.png'
-    - 'assets/backgrounds/bg2.png'
-    - 'assets/backgrounds/bg3.png'
-    - 'assets/backgrounds/bg4.png'
-    - 'assets/backgrounds/bg5.png'
 
   # pasta de imagens logo
     - 'assets/logo/guardiao.png'

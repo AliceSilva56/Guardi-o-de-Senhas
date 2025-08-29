@@ -1,8 +1,10 @@
 // main.dart - Guardião de Senhas
-// Este arquivo é o ponto de entrada do aplicativo Guardião de Senhas.
-// Ele configura o tema, as rotas e o gerenciamento de estado global para o aplicativo.
+// Ponto de entrada do aplicativo Guardião de Senhas.
+// Configura tema, rotas e gerenciamento de estado global.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'screens/elf_intro_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -36,67 +38,22 @@ class MyApp extends StatelessWidget {
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
           debugShowCheckedModeBanner: false,
+          // Primeira tela exibida
           initialRoute: '/elf_intro',
-          onGenerateRoute: (settings) {
-            // Rotas com suporte para backgrounds
-            Widget page;
-            switch (settings.name) {
-              case '/login':
-                page = const LoginScreen();
-                break;
-              case '/register':
-                page = const RegisterScreen();
-                break;
-              case '/registro_guardiao':
-                page = const RegistroGuardiaoFlow();
-                break;
-              case '/main':
-                page = const MainScreen();
-                break;
-              case '/backup':
-                page = const BackupScreen();
-                break;
-              case '/category':
-                final args = settings.arguments as String;
-                page = CategoryScreen(category: args);
-                break;
-              case '/elf_intro':
-                page = const ElfIntroScreen();
-                
-              default:
-                page = const LoginScreen();
-            }
-            return MaterialPageRoute(
-              builder: (context) => BackgroundWrapper(child: page),
-            );
+          routes: {
+            '/elf_intro': (context) => const ElfIntroScreen(),
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/main': (context) => const MainScreen(),
+            '/backup': (context) => const BackupScreen(),
+            '/category': (context) {
+              final args = ModalRoute.of(context)!.settings.arguments as String;
+              return CategoryScreen(category: args);
+            },
+            '/registro_guardiao': (context) => const RegistroGuardiaoFlow(),
           },
         );
       },
-    );
-  }
-}
-
-// Wrapper que aplica o background a qualquer tela
-class BackgroundWrapper extends StatelessWidget {
-  final Widget child;
-  const BackgroundWrapper({required this.child, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        if (BackgroundController.backgroundImage != null)
-          Opacity(
-            opacity: 0.3,
-            child: Image.asset(
-              BackgroundController.backgroundImage!,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-            ),
-          ),
-        child,
-      ],
     );
   }
 }
@@ -124,24 +81,5 @@ class ThemeController extends ChangeNotifier {
         _themeModeName = 'Sistema';
     }
     notifyListeners();
-  }
-}
-
-// Controlador de background global
-class BackgroundController {
-  static String? backgroundImage;
-
-  static void setBackground(String? img) {
-    backgroundImage = img;
-  }
-
-  static Future<List<String>> getAvailableImages() async {
-    return [
-      'assets/backgrounds/bg1.png',
-      'assets/backgrounds/bg2.png',
-      'assets/backgrounds/bg3.png',
-      'assets/backgrounds/bg4.png',
-      'assets/backgrounds/bg5.png',
-    ];
   }
 }
