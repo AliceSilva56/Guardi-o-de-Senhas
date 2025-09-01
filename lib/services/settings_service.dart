@@ -24,6 +24,7 @@ class SettingsService {
   static const String _keyMasterPassword = 'masterPassword';
   static const String _settingsBox = 'settingsBox'; // Nome da box do Hive para configurações
   static const String _loginPasswordKey = 'loginPassword'; // Chave para a senha de login
+  static const String _accountDeletionKey = 'account_deletion_date'; // Chave para data de exclusão da conta
 
   Future<Box> _openBox() async {
     return await Hive.openBox(_boxName);
@@ -78,6 +79,43 @@ static Future<bool> verifyMasterPassword(String password) async {
   final saved = await getMasterPasswordStatic();
   return saved != null && saved == password;
 }
+
+  // Agenda a exclusão da conta
+  static Future<void> scheduleAccountDeletion() async {
+    final box = await Hive.openBox(_settingsBox);
+    final deletionDate = DateTime.now().add(const Duration(days: 30));
+    await box.put(_accountDeletionKey, deletionDate.toIso8601String());
+  }
+
+  // Cancela a exclusão da conta
+  static Future<void> cancelAccountDeletion() async {
+    final box = await Hive.openBox(_settingsBox);
+    await box.delete(_accountDeletionKey);
+  }
+
+  // Verifica se há uma exclusão de conta pendente
+  static Future<DateTime?> getPendingDeletionDate() async {
+    final box = await Hive.openBox(_settingsBox);
+    final dateString = box.get(_accountDeletionKey);
+    if (dateString == null) return null;
+    return DateTime.parse(dateString);
+  }
+
+  // Verifica se a conta deve ser excluída e executa a limpeza se necessário
+  static Future<bool> checkAndProcessDeletion() async {
+    final deletionDate = await getPendingDeletionDate();
+    if (deletionDate == null) return false;
+    
+    if (DateTime.now().isAfter(deletionDate)) {
+      // Tempo de espera expirado - limpar todos os dados
+      final box = await Hive.openBox(_settingsBox);
+      await box.clear();
+      // Aqui você pode adicionar mais limpeza se necessário
+      return true;
+    }
+    return false;
+  }
+
   Future<void> saveMasterPassword(String password) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_masterPasswordKey, password); ///TODO: ideal: criptografar

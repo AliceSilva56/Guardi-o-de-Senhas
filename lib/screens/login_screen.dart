@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import '../theme/app_colors.dart';
 import '../services/settings_service.dart';
+import 'dart:async';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,11 +56,29 @@ class _LoginScreenState extends State<LoginScreen> {
                   final input = masterPasswordController.text.trim();
                   final ok = await SettingsService.verifyMasterPassword(input);
                   if (ok || input == "1234") {
-                    Navigator.pushReplacementNamed(context, '/main');
+                    // Verifica se há uma exclusão pendente
+                    final deletionDate = await SettingsService.getPendingDeletionDate();
+                    if (deletionDate != null) {
+                      // Cancela a exclusão se o usuário fizer login dentro do período de 30 dias
+                      await SettingsService.cancelAccountDeletion();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Exclusão de conta cancelada com sucesso!'),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                    if (context.mounted) {
+                      Navigator.pushReplacementNamed(context, '/main');
+                    }
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Senha incorreta')),
-                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Senha incorreta')),
+                      );
+                    }
                   }
                 },
 

@@ -88,13 +88,10 @@ class SettingsScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium),
           ),
           ListTile(
-            leading: const Icon(Icons.history), // Ícone de histórico
-            title: const Text(
-                'Último backup realizado'), // Exibe a data do último backup
+            leading: const Icon(Icons.history),
+            title: const Text('Último backup realizado'),
             subtitle: FutureBuilder<String>(
-              // Busca a data do último backup
-              future:
-                  _getLastBackupInfo(), // Função que busca a data do último backup
+              future: _getLastBackupInfo(),
               builder: (context, snapshot) {
                 // Constrói o widget com base no estado da Future
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -126,18 +123,18 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Restaurar dados salvos'), // Restaurar backup
             onTap: () => _importBackup(context),
           ),
+          // Opção para excluir conta
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text('Conta',
+                style: Theme.of(context).textTheme.titleMedium),
+          ),
           ListTile(
-            leading: const Icon(Icons.delete),
-            title: const Text(
-                'Limpar dados'), // Limpa todos os dados do aplicativo // fazer a implementação da limpeza de dados
-            subtitle: const Text(
-                'Excluir todos os dados do aplicativo'), // Excluir todos os dados do aplicativo
-            onTap: () {
-              // PasswordService.clearAllData();
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Todos os dados foram excluídos')));
-              Navigator.pop(context); // Volta para a tela anterior
-            },
+            leading: const Icon(Icons.delete_forever, color: Colors.red),
+            title: const Text('Excluir minha conta', style: TextStyle(color: Colors.red)),
+            subtitle: const Text('Remove permanentemente todos os seus dados'),
+            onTap: () => _showDeleteAccountConfirmation(context),
           ),
         ],
       ),
@@ -178,9 +175,123 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // ======================= SENHA ========================
-  // Configura a senha mestra
-  // Configura a senha confidencial
+  // Mostra diálogo de confirmação para exclusão de conta
+  Future<void> _showDeleteAccountConfirmation(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir Conta'),
+        content: const Text(
+          'Tem certeza que deseja excluir sua conta? \nTodos os seus dados serão removidos permanentemente após 30 dias.\n\nVocê pode cancelar a exclusão a qualquer momento antes deste prazo fazendo login novamente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Excluir Conta'),
+          ),
+        ],
+      ),
+    );
 
+    if (confirmed == true) {
+      await _confirmDeleteAccount(context);
+    }
+  }
+
+  // Confirma a exclusão da conta com a senha
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final password = await _showStaticPasswordDialog(context);
+    if (password == null) return;
+    
+    // Verifica tanto a senha fixa '1234' quanto a senha mestra do usuário
+    final isValid = password == '1234' || await SettingsService.verifyMasterPassword(password);
+    if (!isValid) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Senha incorreta')),
+        );
+      }
+      return;
+    }
+
+    // Agenda a exclusão da conta
+    await SettingsService.scheduleAccountDeletion();
+    
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sua conta será excluída em 30 dias. Faça login novamente para cancelar.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  // Mostra diálogo para inserir a senha
+  Future<String?> _showPasswordDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Senha'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'Digite sua senha mestra',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Mostra diálogo para inserir a senha fixa
+  static Future<String?> _showStaticPasswordDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirmar Senha'),
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'Senha'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ======================= SENHA ========================
+  // Configura a senha mestra
   void _configureMasterPassword(BuildContext context) async {
     final controller = TextEditingController();
     final confirmController = TextEditingController();

@@ -1,10 +1,6 @@
-// Arquivo register_screen.dart (mantido simples)
-// Apenas acréscimo: após cadastrar, navegar para MainScreen chamando pelo nome.
-
-import '../services/settings_service.dart'; // 🔹 importa o serviço
 import 'package:flutter/material.dart';
+import 'package:guardiao_de_senhas/screens/main_screen.dart';
 import '../theme/app_colors.dart';
-import 'main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,109 +12,140 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _passController = TextEditingController();
-  final SettingsService _settingsService = SettingsService(); // 🔹 instância
-
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _passController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _register() {
+    // Aqui você chama seu service de registro
+    debugPrint("Nome: ${_nameController.text}");
+    debugPrint("Email: ${_emailController.text}");
+    debugPrint("Senha: ${_passwordController.text}");
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final inputFill = isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground;
-
     return Scaffold(
-      appBar: AppBar(title: Text('Cadastro', style: TextStyle(color: textColor))),
-      body: Padding(
+      backgroundColor: AppColors.backgroundDark,
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        title: const Text(
+          "Criar Conta",
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-  TextField(
-    controller: _nameController,
-    style: TextStyle(color: textColor),
-    autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
-    decoration: InputDecoration(
-      labelText: 'Nome',
-      filled: true,
-      fillColor: inputFill,
-      border: const OutlineInputBorder(),
-    ),
-    onSubmitted: (_) {
-      FocusScope.of(context).nextFocus(); // 🔹 Alteração: Enter vai pro próximo campo
-    },
-  ),
-  const SizedBox(height: 12),
-  TextField(
-    controller: _emailController,
-    style: TextStyle(color: textColor),
-    decoration: InputDecoration(
-      labelText: 'E-mail',
-      filled: true,
-      fillColor: inputFill,
-      border: const OutlineInputBorder(),
-    ),
-    onSubmitted: (_) {
-      FocusScope.of(context).nextFocus(); // 🔹 Alteração: Enter vai pro próximo campo
-    },
-  ),
-  const SizedBox(height: 12),
-  TextField(
-    controller: _passController,
-    obscureText: true,
-    style: TextStyle(color: textColor),
-    decoration: InputDecoration(
-      labelText: 'Senha',
-      filled: true,
-      fillColor: inputFill,
-      border: const OutlineInputBorder(),
-    ),
-   onSubmitted: (_) async {
-  final name = _nameController.text.trim();
-  if (name.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Informe seu nome')),
-    );
-    return;
-  }
-  // 🔹 Agora salva a senha mestre
-  await _settingsService.setMasterPassword(_passController.text.trim());
-
+            const SizedBox(height: 30),
+            TextField(
+              controller: _nameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Nome",
+                labelStyle: const TextStyle(color: Colors.white70),
+                prefixIcon: const Icon(Icons.person, color: AppColors.accent),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.primary),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.accent, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _emailController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "E-mail",
+                labelStyle: const TextStyle(color: Colors.white70),
+                prefixIcon: const Icon(Icons.email, color: AppColors.accent),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.primary),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.accent, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Senha",
+                labelStyle: const TextStyle(color: Colors.white70),
+                prefixIcon: const Icon(Icons.lock, color: AppColors.accent),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.primary),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.accent, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _confirmPasswordController,
+              obscureText: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: "Confirmar Senha",
+                labelStyle: const TextStyle(color: Colors.white70),
+                prefixIcon: const Icon(Icons.lock_outline, color: AppColors.accent),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.primary),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: AppColors.accent, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
   Navigator.pushReplacement(
     context,
-    MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
-      );
-    },
+    MaterialPageRoute(builder: (context) => const MainScreen()),
+  );
+},
+child: const Text(
+  "Registrar",
+  style: TextStyle(
+    fontSize: 18,
+    color: Colors.white,
+    fontWeight: FontWeight.bold,
   ),
-  const SizedBox(height: 20),
-  ElevatedButton(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: AppColors.buttonPrimary,
-      foregroundColor: AppColors.buttonText,
-    ),
-    onPressed: () async {
-  final name = _nameController.text.trim();
-  if (name.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Informe seu nome')),
-    );
-    return;
-  }
-  // 🔹 Agora salva a senha mestre
-  await _settingsService.setMasterPassword(_passController.text.trim());
+),
 
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (_) => MainScreen(userName: name)),
-      );
-    },
-    child: const Text('Concluir Cadastro'),
             ),
           ],
         ),

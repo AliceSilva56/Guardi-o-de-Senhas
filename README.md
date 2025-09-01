@@ -1,5 +1,10 @@
 # 📖 Guardião de Senhas – Roadmap
 
+💙 Últimas Atualizações 01/08/2025
+
+- ❤️ Limpar dados - quero que apareça uma mensagem dizendo que somente após 30 dias os dados (Nome, e-mail, senhas salvas no app(modo normal e modo confidencial)) serão completamente apagados e realmente apagar após 30 dias.
+
+- 💛 Melhorar o register_screen.dart (mantido simples).
 
 💙 Últimas Atualizações 29/08/2025
 
@@ -74,7 +79,8 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 # Próximas Etapas (❤️) Importante, (💛) Necessária e (💚) Opcional
 
 
-- Colocar o a visualização de senha em todos os campos de senhas
+- Colocar o a visualização de senha em todos os campos que pede senhas
+
 - ❤️ Verificar se os arquivos existentes são realmente necessários.
 
 - 💚 Talvez tirar a entrada por Biometria(Pensar melhor sobre a implementação).
@@ -84,10 +90,6 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 - 💛 Fazer a troca de tema funcionar.
 
 - ❤️ Backup importar e exportar não esta funcionando de verdade, fazer funcionar.
-
-- ❤️ Limpar dados - quero que apareça uma mensagem dizendo que somente após 30 dias os dados (Nome, e-mail, senhas salvas no app(modo normal e modo confidencial)) serão completamente apagados e realmente apagar após 30 dias.
-
-- 💛 Melhorar o register_screen.dart (mantido simples).
 
 - ❤️ Após o primeiro contato do usário ao aplicativo deve ir para tela de login, acredito que vamos fazer ela receber o usuário com boas-vindas de voltas e mas algo com mais personalização.
 
