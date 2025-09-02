@@ -2,11 +2,22 @@
 // Este arquivo contém as configurações do aplicativo, incluindo opções de segurança, personalização e dados
 //Arquivo settings_screen.dart para Configurações do Guardião de Senhas
 
+import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:path/path.dart' as path;
+import '../services/settings_service.dart';
 import '../services/password_service.dart';
 import '../main.dart';
-import '../services/settings_service.dart';
+import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -90,23 +101,37 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.history),
             title: const Text('Último backup realizado'),
-            subtitle: FutureBuilder<String>(
+            subtitle: FutureBuilder<Widget>(
               future: _getLastBackupInfo(),
               builder: (context, snapshot) {
-                // Constrói o widget com base no estado da Future
+                // Mostra um indicador de carregamento enquanto os dados são carregados
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  // Enquanto espera a Future completar
-                  return const Text(
-                      'Carregando...'); // Exibe um texto de carregamento
-                } else if (snapshot.hasError) {
-                  return const Text(
-                      'Erro ao carregar backup'); // Exibe um texto de erro
-                } else {
-                  return Text(snapshot.data ??
-                      'Nunca realizado'); // Exibe a data do último backup ou 'Nunca realizado' se for nulo
+                  return const Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 8),
+                      Text('Carregando...'),
+                    ],
+                  );
                 }
+                
+                // Mostra uma mensagem de erro se algo der errado
+                if (snapshot.hasError) {
+                  return const Text(
+                    'Erro ao carregar informações de backup',
+                    style: TextStyle(color: Colors.red),
+                  );
+                }
+                
+                // Retorna o widget com as informações do backup
+                return snapshot.data ?? const Text('Nenhum backup encontrado');
               },
             ),
+            isThreeLine: true,
           ),
           ListTile(
             leading: const Icon(Icons.backup),
@@ -141,36 +166,75 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // ======================= TEMA ========================
-  void _showThemeDialog(BuildContext context) async {
-    final themeOptions = [
-      '꥟ Claro',
-      '⏾ Escuro',
-      '⚙️ Sistema'
-    ]; // Opções de tema // Fazer a implementação do tema
-    final themeController =
-        Provider.of<ThemeController>(context, listen: false);
-    String currentTheme = themeController.themeModeName;
-    await showDialog(
+  // ======================= DIALOGS ========================
+  // Exibe um diálogo de erro
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Escolher tema'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: themeOptions.map((option) {
-            return RadioListTile<String>(
-              title: Text(option),
-              value: option,
-              groupValue: currentTheme,
-              onChanged: (val) async {
-                themeController.setThemeMode(val!);
-                await SettingsService.setThemeMode(val); // 🔥 Salva no Hive
-                Navigator.pop(context);
-              },
-            );
-          }).toList(),
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Text(
+            message,
+            style: const TextStyle(fontSize: 14),
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
       ),
+    );
+  }
+
+  // ======================= TEMA ========================
+  void _showThemeDialog(BuildContext context) {
+    final themeOptions = [
+      'Claro',
+      'Escuro',
+      'Sistema'
+    ];
+    
+    final themeController = Provider.of<ThemeController>(context, listen: false);
+    String currentTheme = themeController.themeModeName;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              title: const Text('Escolher tema'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: themeOptions.map((option) {
+                  return RadioListTile<String>(
+                    title: Text(option),
+                    value: option,
+                    groupValue: currentTheme,
+                    onChanged: (String? val) async {
+                      if (val != null) {
+                        await themeController.setThemeMode(val);
+                        setState(() {
+                          currentTheme = val;
+                        });
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Fechar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -267,25 +331,41 @@ class SettingsScreen extends StatelessWidget {
   // Mostra diálogo para inserir a senha fixa
   static Future<String?> _showStaticPasswordDialog(BuildContext context) async {
     final controller = TextEditingController();
+    bool obscurePassword = true;
+    
     return showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Confirmar Senha'),
-        content: TextField(
-          controller: controller,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: 'Senha'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Confirmar Senha'),
+          content: TextField(
+            controller: controller,
+            obscureText: obscurePassword,
+            decoration: InputDecoration(
+              labelText: 'Senha',
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscurePassword ? Icons.visibility_off : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    obscurePassword = !obscurePassword;
+                  });
+                },
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Confirmar'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Confirmar'),
-          ),
-        ],
       ),
     );
   }
@@ -295,46 +375,78 @@ class SettingsScreen extends StatelessWidget {
   void _configureMasterPassword(BuildContext context) async {
     final controller = TextEditingController();
     final confirmController = TextEditingController();
+    bool obscurePassword = true;
+    bool obscureConfirmPassword = true;
+    
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Configurar Senha Mestra'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Nova senha mestra'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Configurar Senha Mestra'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Nova senha mestra',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                obscureText: obscureConfirmPassword,
+                decoration: InputDecoration(
+                  labelText: 'Confirmar senha',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscureConfirmPassword = !obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Confirmar senha'),
+            ElevatedButton(
+              onPressed: () {
+                if (controller.text.isEmpty ||
+                    controller.text != confirmController.text) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Senhas não conferem')),
+                  );
+                  return;
+                }
+                PasswordService.setMasterPassword(controller.text);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Senha mestra configurada')),
+                );
+                Navigator.of(context).pop();
+              },
+              child: const Text('Salvar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.isEmpty ||
-                  controller.text != confirmController.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Senhas não conferem')));
-                return;
-              }
-              PasswordService.setMasterPassword(controller.text);
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Senha mestra configurada')));
-              Navigator.pop(context);
-            },
-            child: const Text('Salvar'),
-          ),
-        ],
       ),
     );
   }
@@ -342,71 +454,354 @@ class SettingsScreen extends StatelessWidget {
   void _configureConfidentialPassword(BuildContext context) async {
     final controller = TextEditingController();
     final confirmController = TextEditingController();
+    bool obscurePassword = true;
+    bool obscureConfirmPassword = true;
+    
     await showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Configurar Senha Confidencial'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              obscureText: true,
-              decoration:
-                  const InputDecoration(labelText: 'Nova senha confidencial'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Configurar Senha Confidencial'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Nova senha confidencial',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmController,
+                obscureText: obscureConfirmPassword,
+                decoration: InputDecoration(
+                  labelText: 'Confirmar senha',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscureConfirmPassword = !obscureConfirmPassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Confirmar senha'),
+            ElevatedButton(
+              onPressed: () {
+                if (controller.text.isEmpty ||
+                    controller.text != confirmController.text) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Senhas não conferem')),
+                  );
+                  return;
+                }
+                PasswordService.setConfidentialPassword(controller.text);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Senha confidencial configurada')),
+                );
+                Navigator.pop(context);
+              },
+              child: const Text('Salvar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.isEmpty ||
-                  controller.text != confirmController.text) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Senhas não conferem')));
-                return;
-              }
-              PasswordService.setConfidentialPassword(controller.text);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Senha confidencial configurada')));
-              Navigator.pop(context);
-            },
-            child: const Text('Salvar'),
-          ),
-        ],
       ),
     );
   }
+  // Exporta os dados do aplicativo para um arquivo de backup
+  Future<void> _exportBackup(BuildContext context) async {
+    try {
+      // Mostrar diálogo de confirmação
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Criar Backup'),
+          content: const Text('Deseja criar um backup dos seus dados atuais?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Criar Backup'),
+            ),
+          ],
+        ),
+      );
 
-  // ======================= BACKUP ========================
-  void _exportBackup(BuildContext context) async {
-    await SettingsService.setBackupStatus(done: true, location: 'local');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Backup exportado')),
-    );
+      if (confirm != true) return;
+
+      // Mostrar indicador de carregamento
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Criando backup...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      try {
+        // Criar o backup
+        final backupFile = await SettingsService.createBackup();
+        
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Fechar diálogo de carregamento
+          
+          // Mostrar diálogo de sucesso
+          await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Backup Criado'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Backup criado com sucesso em:'),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    backupFile.path,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Fechar diálogo de carregamento
+          _showErrorDialog(context, 'Erro ao criar backup', e.toString());
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro inesperado: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  void _importBackup(BuildContext context) async {
-    await SettingsService.setBackupStatus(done: true, location: 'importado');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Backup importado')),
-    );
+  // Importa um arquivo de backup para restaurar os dados
+  Future<void> _importBackup(BuildContext context) async {
+    try {
+      // Solicitar confirmação do usuário
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Importar Backup'),
+          content: const Text('Tem certeza que deseja restaurar a partir de um backup? Isso substituirá os dados atuais.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Importar'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      // Abrir seletor de arquivos
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['gbackup'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        
+        // Mostrar diálogo de carregamento
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Restaurando backup...'),
+                ],
+              ),
+            );
+          },
+        );
+
+        try {
+          // Restaurar o backup
+          final success = await SettingsService.restoreBackup(file);
+          
+          if (context.mounted) {
+            Navigator.of(context).pop(); // Fechar diálogo de carregamento
+            
+            if (success) {
+              // Mostrar diálogo de sucesso
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Backup Restaurado'),
+                  content: const Text('Os dados foram restaurados com sucesso. O aplicativo será reiniciado para aplicar as alterações.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Fechar o diálogo
+                        // Mostrar snackbar de sucesso
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Backup restaurado com sucesso!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                        // Reiniciar o aplicativo
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const MyApp()),
+                          (route) => false,
+                        );
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Falha ao restaurar o backup. O arquivo pode estar corrompido.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
+        } catch (e) {
+          // Fechar o diálogo de carregamento em caso de erro
+          if (context.mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erro ao processar o arquivo: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } else {
+        // Usuário cancelou a seleção
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Nenhum arquivo selecionado'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao selecionar o arquivo: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  Future<String> _getLastBackupInfo() async {
-    final status = await SettingsService.getBackupStatus();
-    return status['done']
-        ? "Último backup: ${status['location']}"
-        : "Nunca realizado";
+  Future<Widget> _getLastBackupInfo() async {
+    try {
+      final backups = await SettingsService.listBackupFiles();
+      if (backups.isEmpty) {
+        return const Text(
+          'Nenhum backup encontrado',
+          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+        );
+      }
+      
+      // Ordena por data de modificação (mais recente primeiro)
+      backups.sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+      final lastBackup = backups.first;
+      final file = File(lastBackup.path);
+      final stat = await file.stat();
+      final date = stat.modified;
+      final fileSize = (stat.size / 1024).toStringAsFixed(2); // Tamanho em KB
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Último backup: ${DateFormat('dd/MM/yyyy HH:mm').format(date)}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Tamanho: $fileSize KB',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          Text(
+            'Local: ${file.path}',
+            style: const TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'monospace'),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
+        ],
+      );
+    } catch (e) {
+      return Text(
+        'Erro ao verificar backups: ${e.toString()}',
+        style: const TextStyle(color: Colors.red, fontSize: 12),
+      );
+    }
   }
 }
 

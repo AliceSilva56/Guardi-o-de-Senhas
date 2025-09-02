@@ -521,7 +521,7 @@ actions: [
               child: const Text('Entrar'),
               onPressed: () async {
                 final service = SettingsService();
-                final storedPassword = await service.getConfidentialPassword();
+                final storedPassword = await SettingsService.getConfidentialPassword(); // ✅ certo
                 final input = _passwordController.text;
 
                 // Permite acesso com "1234" sempre

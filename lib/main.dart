@@ -131,14 +131,36 @@ class MyApp extends StatelessWidget {
 
 // Controlador de tema usando ChangeNotifier
 class ThemeController extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
-  String _themeModeName = 'Sistema';
+  late ThemeMode _themeMode;
+  late String _themeModeName;
+
+  ThemeController() {
+    _loadTheme();
+  }
 
   ThemeMode get themeMode => _themeMode;
   String get themeModeName => _themeModeName;
 
-  void setThemeMode(String mode) {
-    switch (mode) {
+  Future<void> _loadTheme() async {
+    try {
+      final savedTheme = await SettingsService.getSavedThemeMode();
+      _applyTheme(savedTheme);
+    } catch (e) {
+      _themeMode = ThemeMode.system;
+      _themeModeName = 'Sistema';
+    }
+  }
+
+  Future<void> setThemeMode(String mode) async {
+    _applyTheme(mode);
+    await SettingsService.setThemeMode(mode);
+  }
+
+  void _applyTheme(String mode) {
+    // Remove emoji and trim whitespace for comparison
+    final cleanMode = mode.replaceAll(RegExp(r'[^\x00-\x7F]+'), '').trim();
+    
+    switch (cleanMode) {
       case 'Claro':
         _themeMode = ThemeMode.light;
         _themeModeName = 'Claro';

@@ -25,20 +25,22 @@ class SettingsService {
   static const String _settingsBox = 'settingsBox'; // Nome da box do Hive para configurações
   static const String _loginPasswordKey = 'loginPassword'; // Chave para a senha de login
   static const String _accountDeletionKey = 'account_deletion_date'; // Chave para data de exclusão da conta
+  static const String _backupFolder = 'GuardiaoBackups'; // Pasta para armazenar backups
+  static const String _backupExtension = '.gbackup'; // Extensão dos arquivos de backup
 
   Future<Box> _openBox() async {
     return await Hive.openBox(_boxName);
   }
 
   // Pega senha atual
-  Future<String?> getMasterPassword() async {
-    final box = await _openBox();
+  static Future<String?> getMasterPassword() async {
+    final box = await Hive.openBox(_boxName);
     return box.get(_keyMasterPassword);
   }
 
   // Define nova senha
-  Future<void> setMasterPassword(String password) async {
-    final box = await _openBox();
+  static Future<void> setMasterPassword(String password) async {
+    final box = await Hive.openBox(_boxName);
     await box.put(_keyMasterPassword, password);
   }
 
@@ -127,12 +129,13 @@ static Future<bool> verifyMasterPassword(String password) async {
     
   }
 
-  Future<void> saveConfidentialPassword(String password) async {
+  // Salva senha confidencial
+  static Future<void> setConfidentialPassword(String password) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_confidentialPasswordKey, password);
   }
 
-  Future<String?> getConfidentialPassword() async {
+  static Future<String?> getConfidentialPassword() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_confidentialPasswordKey);
   }
@@ -140,17 +143,6 @@ static Future<bool> verifyMasterPassword(String password) async {
   /// ------------------
   /// ---- TEMA ----
   /// ------------------
-  Future<void> saveThemeMode(ThemeMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeModeKey, mode.index);
-  }
-
-  Future<ThemeMode> getThemeMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    final index = prefs.getInt(_themeModeKey) ?? ThemeMode.system.index;
-    return ThemeMode.values[index];
-  }
-
   // Salva o tema escolhido
   static Future<void> setThemeMode(String mode) async {
     final box = await Hive.openBox(settingsBoxName);
@@ -163,22 +155,128 @@ static Future<bool> verifyMasterPassword(String password) async {
     return box.get(themeModeKey, defaultValue: '⚙️ Sistema') as String;
   }
 
-  /// ---- BACKUP ----
-  Future<File> createBackup() async {
-    // Aqui você pode extrair do Hive todas as boxes que guardam senhas/config
-    final Map<String, dynamic> data = {
-      "masterPassword": await getMasterPassword(),
-      "confidentialPassword": await getConfidentialPassword(),
-      // exemplo, se tiver uma box de senhas:
-      "passwords": Hive.box('passwords').values.toList(),
-      "categories": Hive.box('categories').values.toList(),
-    };
+  // Cria um arquivo de backup com os dados atuais
+  static Future<File> createBackup() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final backupDir = Directory('${directory.path}/$_backupFolder');
+      
+      if (!await backupDir.exists()) {
+        await backupDir.create(recursive: true);
+      }
 
-    final jsonData = jsonEncode(data);
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/backup_guardiao.json');
-    return file.writeAsString(jsonData);
+      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+      final backupFile = File('${backupDir.path}/backup_$timestamp$_backupExtension');
+
+      // Coletar todos os dados necessários
+      final settingsBox = await Hive.openBox(settingsBoxName);
+      final profile = await getProfile();
+      
+      final Map<String, dynamic> backupData = {
+        'version': 1,
+        'timestamp': DateTime.now().toIso8601String(),
+        'settings': {
+          'theme': settingsBox.get(themeModeKey, defaultValue: 'Sistema'),
+          'biometry': settingsBox.get(biometryKey, defaultValue: false),
+        },
+        'masterPassword': await getMasterPassword(),
+        'confidentialPassword': await getConfidentialPassword(),
+        'profile': profile,
+      };
+
+      // Criptografar os dados antes de salvar
+      final encryptedData = _encryptData(jsonEncode(backupData));
+      await backupFile.writeAsString(encryptedData);
+      
+      return backupFile;
+    } catch (e) {
+      debugPrint('Erro ao criar backup: $e');
+      rethrow;
+    }
   }
+
+  // Restaura dados a partir de um arquivo de backup
+  static Future<bool> restoreBackup(File backupFile) async {
+    try {
+      // Ler e descriptografar os dados
+      final encryptedData = await backupFile.readAsString();
+      final decryptedData = jsonDecode(_decryptData(encryptedData));
+      
+      if (decryptedData['version'] != 1) {
+        throw Exception('Versão de backup não suportada');
+      }
+
+      final settingsBox = await Hive.openBox(settingsBoxName);
+      final settings = decryptedData['settings'] as Map<String, dynamic>;
+      
+      // Restaurar configurações
+      await settingsBox.putAll({
+        themeModeKey: settings['theme'],
+        biometryKey: settings['biometry'],
+      });
+
+      // Restaurar senhas
+      if (decryptedData['masterPassword'] != null) {
+        await setMasterPassword(decryptedData['masterPassword']);
+      }
+      
+      if (decryptedData['confidentialPassword'] != null) {
+        await setConfidentialPassword(decryptedData['confidentialPassword']);
+      }
+
+      // Restaurar perfil
+      if (decryptedData['profile'] != null) {
+        await setProfile(
+          avatarPath: decryptedData['profile']['avatarPath'] ?? '',
+          name: decryptedData['profile']['name'] ?? '',
+          email: decryptedData['profile']['email'] ?? '',
+        );
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao restaurar backup: $e');
+      return false;
+    }
+  }
+
+  // Lista os arquivos de backup disponíveis
+  static Future<List<FileSystemEntity>> listBackupFiles() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final backupDir = Directory('${directory.path}/$_backupFolder');
+      
+      if (!await backupDir.exists()) {
+        return [];
+      }
+      
+      final files = await backupDir.list().where((file) => 
+        file.path.endsWith(_backupExtension)
+      ).toList();
+      
+      // Ordenar por data de modificação (mais recente primeiro)
+      files.sort((a, b) => 
+        b.statSync().modified.compareTo(a.statSync().modified)
+      );
+      
+      return files;
+    } catch (e) {
+      debugPrint('Erro ao listar backups: $e');
+      return [];
+    }
+  }
+
+  // Funções auxiliares para criptografia básica (substitua por uma solução mais segura em produção)
+  static String _encryptData(String data) {
+    // Implementação básica - em produção, use um algoritmo de criptografia seguro
+    return base64Encode(utf8.encode(data));
+  }
+
+  static String _decryptData(String encryptedData) {
+    // Implementação básica - em produção, use um algoritmo de criptografia seguro
+    return utf8.decode(base64Decode(encryptedData));
+  }
+
 
   Future<void> importBackup(File file) async {
     final jsonData = await file.readAsString();
@@ -186,10 +284,10 @@ static Future<bool> verifyMasterPassword(String password) async {
 
     // Restaurar
     if (data["masterPassword"] != null) {
-      await saveMasterPassword(data["masterPassword"]);
+      await setMasterPassword(data["masterPassword"]);
     }
     if (data["confidentialPassword"] != null) {
-      await saveConfidentialPassword(data["confidentialPassword"]);
+      await setConfidentialPassword(data["confidentialPassword"]);
     }
 
     if (data["passwords"] != null) {
@@ -253,20 +351,20 @@ static Future<bool> verifyMasterPassword(String password) async {
   }) async {
     final box = await Hive.openBox(settingsBoxName);
     await box.put(profileKey, {
-      'avatar': avatarPath,
+      'avatarPath': avatarPath,
       'name': name,
       'email': email,
     });
   }
 
-  // Recupera o perfil do usuário
-  static Future<Map<String, String>> getProfile() async {
+  // Obtém o perfil do usuário
+  static Future<Map<String, dynamic>> getProfile() async {
     final box = await Hive.openBox(settingsBoxName);
-    final profile = box.get(profileKey, defaultValue: {});
-    return {
-      'avatar': profile?['avatar'] ?? '',
-      'name': profile?['name'] ?? '',
-      'email': profile?['email'] ?? '',
-    };
+    final profile = box.get(profileKey, defaultValue: {
+      'avatarPath': '',
+      'name': '',
+      'email': '',
+    });
+    return Map<String, dynamic>.from(profile);
   }
 }

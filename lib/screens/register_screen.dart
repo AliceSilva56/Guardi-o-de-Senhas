@@ -14,6 +14,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -87,12 +89,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 20),
             TextField(
               controller: _passwordController,
-              obscureText: true,
+              obscureText: _obscurePassword,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: "Senha",
                 labelStyle: const TextStyle(color: Colors.white70),
                 prefixIcon: const Icon(Icons.lock, color: AppColors.accent),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.white70,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: const BorderSide(color: AppColors.primary),
                   borderRadius: BorderRadius.circular(12),
@@ -106,12 +119,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 20),
             TextField(
               controller: _confirmPasswordController,
-              obscureText: true,
+              obscureText: _obscureConfirmPassword,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: "Confirmar Senha",
                 labelStyle: const TextStyle(color: Colors.white70),
                 prefixIcon: const Icon(Icons.lock_outline, color: AppColors.accent),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.white70,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: const BorderSide(color: AppColors.primary),
                   borderRadius: BorderRadius.circular(12),

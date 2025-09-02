@@ -26,6 +26,7 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
   String pergunta = "";
   final respostaCtrl = TextEditingController();
   bool biometriaEscolha = false;
+  bool _obscurePassword = true;
 
   void nextPage() {
     if (pageIndex < 5) {
@@ -180,19 +181,29 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
         _title("Escolha sua chave mestra$saudacao"),
         TextField(
           controller: senhaCtrl,
-          textInputAction: TextInputAction.done, // <- adicionado
-  onSubmitted: (_) { // <- adicionado
-  
-    if (senhaCtrl.text.length < 6) return;
-    nextPage();
-  },
-   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
-          obscureText: true,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            if (senhaCtrl.text.length < 6) return;
+            nextPage();
+          },
+          autofocus: true,
+          obscureText: _obscurePassword,
           decoration: InputDecoration(
             hintText: "Senha mestra",
             filled: true,
             fillColor: Colors.white12,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                color: Colors.white70,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -357,7 +368,7 @@ Widget _finalizacao() {
         onPressed: () async {
           // 🔹 Persistir dados no SettingsService
           await _settings.setLoginPassword(senhaCtrl.text.trim());
-          await _settings.setMasterPassword(senhaCtrl.text.trim()); // redundante mas garante  
+          await SettingsService.setMasterPassword(senhaCtrl.text.trim()); // redundante mas garante  
           await SettingsService.setProfile(
             avatarPath: "",
             name: nome,

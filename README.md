@@ -1,5 +1,13 @@
 # 📖 Guardião de Senhas – Roadmap
 
+💙 Últimas Atualizações 02/08/2025
+
+- Colocar o a visualização de senha em todos os campos que pede senhas
+
+- 💛 Fazer a troca de tema funcionar.
+
+- ❤️ Backup importar e exportar não esta funcionando de verdade, fazer funcionar.
+
 💙 Últimas Atualizações 01/08/2025
 
 - ❤️ Limpar dados - quero que apareça uma mensagem dizendo que somente após 30 dias os dados (Nome, e-mail, senhas salvas no app(modo normal e modo confidencial)) serão completamente apagados e realmente apagar após 30 dias.
@@ -78,18 +86,16 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 
 # Próximas Etapas (❤️) Importante, (💛) Necessária e (💚) Opcional
 
-
-- Colocar o a visualização de senha em todos os campos que pede senhas
+Concertar erro do backup
+- Erro ao criar backup
+MissingPluginException(No implementation found for method getApplicationDocumentsDirectory on channel plugins.flutter.io/path_provider)
+- Erro ao selecionar o arquivo: LatelinitializationError: field '_instance' has not been initialized.
 
 - ❤️ Verificar se os arquivos existentes são realmente necessários.
 
 - 💚 Talvez tirar a entrada por Biometria(Pensar melhor sobre a implementação).
 
 - 💛 Verificar/Concertar o campo de  pergunta no registro flow, está com pouco espaço, Colocar tratativa de erros especifica, para campos vazios e etc.
-
-- 💛 Fazer a troca de tema funcionar.
-
-- ❤️ Backup importar e exportar não esta funcionando de verdade, fazer funcionar.
 
 - ❤️ Após o primeiro contato do usário ao aplicativo deve ir para tela de login, acredito que vamos fazer ela receber o usuário com boas-vindas de voltas e mas algo com mais personalização.
 
