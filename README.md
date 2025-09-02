@@ -91,6 +91,8 @@ Concertar erro do backup
 MissingPluginException(No implementation found for method getApplicationDocumentsDirectory on channel plugins.flutter.io/path_provider)
 - Erro ao selecionar o arquivo: LatelinitializationError: field '_instance' has not been initialized.
 
+- Acredito que seja viavél criar uma pasta para os arquivos de backup.
+
 - ❤️ Verificar se os arquivos existentes são realmente necessários.
 
 - 💚 Talvez tirar a entrada por Biometria(Pensar melhor sobre a implementação).
