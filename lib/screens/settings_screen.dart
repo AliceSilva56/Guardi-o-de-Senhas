@@ -15,12 +15,128 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import '../services/settings_service.dart';
+import '../services/pdf_export_service.dart';
 import '../services/password_service.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  // ======================= MÉTODOS DE EXPORTAÇÃO ========================
+  
+  // Exporta os dados do aplicativo para um arquivo de backup
+  Future<void> _exportBackup(BuildContext context, {required bool isConfidential}) async {
+    // Verificar se existem senhas para exportar
+    final hasPasswords = await PDFExportService.hasPasswordsToExport();
+    if (!hasPasswords) {
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => const AlertDialog(
+            title: Text('Nenhuma senha encontrada'),
+            content: Text('Não há senhas para exportar.'),
+            actions: [
+              TextButton(
+                onPressed: null,
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    // Mostrar diálogo de confirmação para backup confidencial
+    if (isConfidential) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Atenção'),
+          content: const Text(
+            'O backup confidencial irá incluir todas as suas senhas em texto legível. ' 
+            'Certifique-se de armazenar este arquivo em um local seguro.\n\n' 
+            'Deseja continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      );
+      
+      if (confirmed != true) {
+        return; // Usuário cancelou
+      }
+    }
+
+    // Mostrar indicador de carregamento
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Gerar o PDF
+      final file = await PDFExportService.exportPasswordsToPDF(
+        isConfidential: isConfidential,
+      );
+      
+      // Fechar o indicador de carregamento
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Mostrar diálogo de sucesso
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Backup ${isConfidential ? 'Confidencial ' : ''}Concluído'),
+            content: Text(
+              'O backup foi salvo em:\n${file.path}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Fechar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  PDFExportService.openPDF(file);
+                },
+                child: const Text('Abrir PDF'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Fechar o indicador de carregamento em caso de erro
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Mostrar mensagem de erro
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerar backup: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +213,18 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Text('Dados e Backup',
                 style: Theme.of(context).textTheme.titleMedium),
+          ),
+          ListTile(
+            leading: const Icon(Icons.backup),
+            title: const Text('Exportar Backup Normal'),
+            subtitle: const Text('Exporta um PDF com as senhas ocultas'),
+            onTap: () => _exportBackup(context, isConfidential: false),
+          ),
+          ListTile(
+            leading: const Icon(Icons.security),
+            title: const Text('Exportar Backup Confidencial'),
+            subtitle: const Text('Exporta um PDF com as senhas visíveis'),
+            onTap: () => _exportBackup(context, isConfidential: true),
           ),
           ListTile(
             leading: const Icon(Icons.history),
@@ -530,14 +658,38 @@ class SettingsScreen extends StatelessWidget {
     );
   }
   // Exporta os dados do aplicativo para um arquivo de backup
-  Future<void> _exportBackup(BuildContext context) async {
-    try {
-      // Mostrar diálogo de confirmação
-      final confirm = await showDialog<bool>(
+  Future<void> _exportBackup(BuildContext context, {required bool isConfidential}) async {
+    // Verificar se existem senhas para exportar
+    final hasPasswords = await PDFExportService.hasPasswordsToExport();
+    if (!hasPasswords) {
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => const AlertDialog(
+            title: Text('Nenhuma senha encontrada'),
+            content: Text('Não há senhas para exportar.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+    // Mostrar diálogo de confirmação para backup confidencial
+    if (isConfidential) {
+      final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Criar Backup'),
-          content: const Text('Deseja criar um backup dos seus dados atuais?'),
+          title: const Text('Atenção'),
+          content: const Text(
+            'O backup confidencial irá incluir todas as suas senhas em texto legível. ' 
+            'Certifique-se de armazenar este arquivo em um local seguro.\n\n' 
+            'Deseja continuar?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -545,17 +697,76 @@ class SettingsScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Criar Backup'),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Continuar'),
             ),
           ],
         ),
       );
+      
+      if (confirmed != true) {
+        return; // Usuário cancelou
+      }
+    }
 
-      if (confirm != true) return;
+    // Mostrar indicador de carregamento
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
 
-      // Mostrar indicador de carregamento
-      showDialog(
-        context: context,
+    try {
+      // Gerar o PDF
+      final file = await PDFExportService.exportPasswordsToPDF(
+        isConfidential: isConfidential,
+      );
+      
+      // Fechar o indicador de carregamento
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Mostrar diálogo de sucesso
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Backup ${isConfidential ? 'Confidencial ' : ''}Concluído'),
+            content: Text(
+              'O backup foi salvo em:\n${file.path}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Fechar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  PDFExportService.openPDF(file);
+                },
+                child: const Text('Abrir PDF'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Fechar o indicador de carregamento em caso de erro
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        
+        // Mostrar mensagem de erro
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerar backup: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
         barrierDismissible: false,
         builder: (BuildContext context) {
           return const AlertDialog(

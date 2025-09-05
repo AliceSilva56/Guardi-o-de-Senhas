@@ -1,5 +1,16 @@
 # 📖 Guardião de Senhas – Roadmap
 
+
+
+💙 Últimas Atualizações 05/09/2025
+
+- Concerte os erros do backup e exportação para pdf.
+
+💙 Últimas Atualizações 04/08/2025
+
+- Tentei adicionar o backup, mas só dava erro na importação desistir, e coloquei para só exportar por pdf com as informações de nome, e-mail, senhas salvas no app(modo normal e modo confidencial).
+
+
 💙 Últimas Atualizações 02/08/2025
 
 - Colocar o a visualização de senha em todos os campos que pede senhas
