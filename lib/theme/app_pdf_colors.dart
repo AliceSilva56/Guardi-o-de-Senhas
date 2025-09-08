@@ -1,5 +1,7 @@
 // lib/utils/app_pdf_colors.dart
 import 'package:pdf/pdf.dart' as pdf;
+import 'package:pdf/widgets.dart' as pw;
+
 
 /// Conversor + paleta em cima de PdfColor
 class AppPdfColors {

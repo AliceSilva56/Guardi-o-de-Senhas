@@ -267,7 +267,7 @@ class SettingsScreen extends StatelessWidget {
                 'Criar backup'), // Cria um backup dos dados // fazer a implementação do backup
             subtitle: const Text(
                 'Exportar senhas criptografadas'), // Exportar as senhas criptografadas // fazer a implementação do backup
-            onTap: () => _exportBackup(context),
+            onTap: () => _exportBackup(context, isConfidential: false),
           ),
           ListTile(
             leading: const Icon(Icons.restore),
