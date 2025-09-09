@@ -3,6 +3,8 @@
 // Configura tema, rotas e gerenciamento de estado global.
 
 import 'package:flutter/material.dart'; // Importa o pacote Flutter
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart'; // Importa o pacote Provider
 import 'screens/elf_intro_screen.dart'; // Importa a tela de introdução do elfo
 import 'screens/login_screen.dart'; // Importa a tela de login
@@ -15,7 +17,8 @@ import 'services/password_service.dart'; // Importa o serviço de senhas
 import 'services/settings_service.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter(); // se estiver usando hive_flutter
   await PasswordService.init();
   
   // Verifica se há uma exclusão de conta pendente

@@ -15,7 +15,6 @@ dependencies:
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.2.2
   file_picker: ^8.1.2
-  path_provider: ^2.1.1
   path: ^1.8.3
   intl: ^0.18.1
   provider: ^6.1.5
@@ -25,7 +24,8 @@ dependencies:
   path_provider_windows: ^2.2.1
   url_launcher: ^6.2.5
   pdf: ^3.11.0   # ou a última versão estável
-  
+  open_file: ^3.5.10
+  path_provider: ^2.1.3
 
 dev_dependencies:
   flutter_test:
@@ -54,3 +54,7 @@ flutter:
     - 'assets/Animation/guardiao_nome_transparente.png' # Tela de nome
     - 'assets/animation/guardiao_PerguntaSeguranca_transparente.png' # Tela de pergunta de segurança
     - 'assets/Animation/guardiao_senhaMestra_transparente.png' # Tela de senha mestra
+
+    # pasta fontes
+    - 'assets/fonts/Roboto-Regular.ttf'
+    - 'assets/fonts/Roboto-Bold.ttf'

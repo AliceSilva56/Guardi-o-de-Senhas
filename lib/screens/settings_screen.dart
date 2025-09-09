@@ -3,9 +3,6 @@
 //Arquivo settings_screen.dart para Configurações do Guardião de Senhas
 
 import 'dart:io';
-import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,10 +21,7 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   // ======================= MÉTODOS DE EXPORTAÇÃO ========================
-  
-  // Exporta os dados do aplicativo para um arquivo de backup
   Future<void> _exportBackup(BuildContext context, {required bool isConfidential}) async {
-    // Verificar se existem senhas para exportar
     final hasPasswords = await PDFExportService.hasPasswordsToExport();
     if (!hasPasswords) {
       if (context.mounted) {
@@ -48,15 +42,14 @@ class SettingsScreen extends StatelessWidget {
       return;
     }
 
-    // Mostrar diálogo de confirmação para backup confidencial
     if (isConfidential) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Atenção'),
           content: const Text(
-            'O backup confidencial irá incluir todas as suas senhas em texto legível. ' 
-            'Certifique-se de armazenar este arquivo em um local seguro.\n\n' 
+            'O backup confidencial irá incluir todas as suas senhas em texto legível. '
+            'Certifique-se de armazenar este arquivo em um local seguro.\n\n'
             'Deseja continuar?',
           ),
           actions: [
@@ -72,13 +65,9 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       );
-      
-      if (confirmed != true) {
-        return; // Usuário cancelou
-      }
+      if (confirmed != true) return;
     }
 
-    // Mostrar indicador de carregamento
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -88,16 +77,12 @@ class SettingsScreen extends StatelessWidget {
     );
 
     try {
-      // Gerar o PDF
       final file = await PDFExportService.exportPasswordsToPDF(
         isConfidential: isConfidential,
       );
-      
-      // Fechar o indicador de carregamento
+
       if (context.mounted) {
         Navigator.of(context).pop();
-        
-        // Mostrar diálogo de sucesso
         await showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -123,11 +108,8 @@ class SettingsScreen extends StatelessWidget {
         );
       }
     } catch (e) {
-      // Fechar o indicador de carregamento em caso de erro
       if (context.mounted) {
         Navigator.of(context).pop();
-        
-        // Mostrar mensagem de erro
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro ao gerar backup: $e'),
@@ -138,161 +120,147 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  // ======================= BUILD ========================
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Configurações')),
-      body: ListView(
-        children: [
-          // Informações Básicas
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Informações Básicas',
-                style: Theme.of(context).textTheme.titleMedium),
-          ),
-          // Opção de Perfil
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Perfil'),
-            subtitle: const Text('Avatar, Nome, e-mail'),
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen())),
-          ),
-          const Divider(),
+  return Scaffold(
+    appBar: AppBar(title: const Text('Configurações')),
+    body: ListView(
+      children: [
+        // Informações Básicas
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Informações Básicas',
+              style: Theme.of(context).textTheme.titleMedium),
+        ),
+        // Opção de Perfil
+        ListTile(
+          leading: const Icon(Icons.person),
+          title: const Text('Perfil'),
+          subtitle: const Text('Avatar, Nome, e-mail'),
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen())),
+        ),
+        const Divider(),
 
-          // Opções de Segurança
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Opções de Segurança',
-                style: Theme.of(context).textTheme.titleMedium),
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock),
-            title: const Text('Senha mestra'),
-            subtitle: const Text('Protege o acesso ao app'),
-            onTap: () => _configureMasterPassword(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock_outline),
-            title: const Text('Senha do modo confidencial'),
-            subtitle: const Text('Desbloqueia apenas conteúdo confidencial'),
-            onTap: () => _configureConfidentialPassword(context),
-          ),
-          ListTile(
-            leading: const Icon(Icons.fingerprint),
-            title: const Text('Autenticação biométrica'),
-            subtitle: const Text('Impressão digital ou reconhecimento facial'),
-            onTap: () async {
-              bool atual = await SettingsService.getBiometryEnabled();
-              await SettingsService.setBiometryEnabled(!atual);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content:
-                        Text('Biometria ${!atual ? "ativada" : "desativada"}')),
-              );
-            }, // implementar biometria
-          ),
-          const Divider(),
+        // Opções de Segurança
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Opções de Segurança',
+              style: Theme.of(context).textTheme.titleMedium),
+        ),
+        ListTile(
+          leading: const Icon(Icons.lock),
+          title: const Text('Senha mestra'),
+          subtitle: const Text('Protege o acesso ao app'),
+          onTap: () => _configureMasterPassword(context),
+        ),
+        ListTile(
+          leading: const Icon(Icons.lock_outline),
+          title: const Text('Senha do modo confidencial'),
+          subtitle: const Text('Desbloqueia apenas conteúdo confidencial'),
+          onTap: () => _configureConfidentialPassword(context),
+        ),
+        ListTile(
+          leading: const Icon(Icons.fingerprint),
+          title: const Text('Autenticação biométrica'),
+          subtitle: const Text('Impressão digital ou reconhecimento facial'),
+          onTap: () async {
+            bool atual = await SettingsService.getBiometryEnabled();
+            await SettingsService.setBiometryEnabled(!atual);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content:
+                      Text('Biometria ${!atual ? "ativada" : "desativada"}')),
+            );
+          }, // implementar biometria
+        ),
+        const Divider(),
 
-          // Personalização
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Personalização',
-                style: Theme.of(context).textTheme.titleMedium),
-          ),
-          ListTile(
-            leading: const Icon(Icons.color_lens),
-            title: const Text('Tema do aplicativo'),
-            subtitle: const Text('Claro, escuro ou sistema'),
-            onTap: () => _showThemeDialog(context),
-          ),
-          const Divider(),
+        // Personalização
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Personalização',
+              style: Theme.of(context).textTheme.titleMedium),
+        ),
+        ListTile(
+          leading: const Icon(Icons.color_lens),
+          title: const Text('Tema do aplicativo'),
+          subtitle: const Text('Claro, escuro ou sistema'),
+          onTap: () => _showThemeDialog(context),
+        ),
+        const Divider(),
 
-          // Dados e Backup
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Dados e Backup',
-                style: Theme.of(context).textTheme.titleMedium),
+        // Dados e Backup
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Dados e Backup',
+              style: Theme.of(context).textTheme.titleMedium),
+        ),
+        ListTile(
+          leading: const Icon(Icons.picture_as_pdf),
+          title: const Text('Exportar Backup em PDF'),
+          subtitle: const Text(
+              'Exporta todas as senhas (visíveis e confidenciais)'),
+          onTap: () => PDFExportService.exportBackupPDF(context),
+        ),
+        ListTile(
+          leading: const Icon(Icons.history),
+          title: const Text('Último backup realizado'),
+          subtitle: FutureBuilder<Widget>(
+            future: _getLastBackupInfo(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 8),
+                    Text('Carregando...'),
+                  ],
+                );
+              }
+              if (snapshot.hasError) {
+                return const Text(
+                  'Erro ao carregar informações de backup',
+                  style: TextStyle(color: Colors.red),
+                );
+              }
+              return snapshot.data ?? const Text('Nenhum backup encontrado');
+            },
           ),
-          ListTile(
-            leading: const Icon(Icons.backup),
-            title: const Text('Exportar Backup Normal'),
-            subtitle: const Text('Exporta um PDF com as senhas ocultas'),
-            onTap: () => _exportBackup(context, isConfidential: false),
-          ),
-          ListTile(
-            leading: const Icon(Icons.security),
-            title: const Text('Exportar Backup Confidencial'),
-            subtitle: const Text('Exporta um PDF com as senhas visíveis'),
-            onTap: () => _exportBackup(context, isConfidential: true),
-          ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Último backup realizado'),
-            subtitle: FutureBuilder<Widget>(
-              future: _getLastBackupInfo(),
-              builder: (context, snapshot) {
-                // Mostra um indicador de carregamento enquanto os dados são carregados
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Row(
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      SizedBox(width: 8),
-                      Text('Carregando...'),
-                    ],
-                  );
-                }
-                
-                // Mostra uma mensagem de erro se algo der errado
-                if (snapshot.hasError) {
-                  return const Text(
-                    'Erro ao carregar informações de backup',
-                    style: TextStyle(color: Colors.red),
-                  );
-                }
-                
-                // Retorna o widget com as informações do backup
-                return snapshot.data ?? const Text('Nenhum backup encontrado');
-              },
-            ),
-            isThreeLine: true,
-          ),
-          ListTile(
-            leading: const Icon(Icons.backup),
-            title: const Text(
-                'Criar backup'), // Cria um backup dos dados // fazer a implementação do backup
-            subtitle: const Text(
-                'Exportar senhas criptografadas'), // Exportar as senhas criptografadas // fazer a implementação do backup
-            onTap: () => _exportBackup(context, isConfidential: false),
-          ),
-          ListTile(
-            leading: const Icon(Icons.restore),
-            title: const Text(
-                'Importar backup'), // Importa um backup de dados // fazer a implementação do backup
-            subtitle: const Text('Restaurar dados salvos'), // Restaurar backup
-            onTap: () => _importBackup(context),
-          ),
-          // Opção para excluir conta
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Conta',
-                style: Theme.of(context).textTheme.titleMedium),
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Excluir minha conta', style: TextStyle(color: Colors.red)),
-            subtitle: const Text('Remove permanentemente todos os seus dados'),
-            onTap: () => _showDeleteAccountConfirmation(context),
-          ),
-        ],
-      ),
-    );
-  }
+          isThreeLine: true,
+        ),
+        ListTile(
+          leading: const Icon(Icons.restore),
+          title: const Text('Importar backup'),
+          subtitle: const Text('Restaurar dados salvos'),
+          onTap: () => _importBackup(context),
+        ),
+        const Divider(),
+
+        // Conta
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child:
+              Text('Conta', style: Theme.of(context).textTheme.titleMedium),
+        ),
+        ListTile(
+          leading: const Icon(Icons.delete_forever, color: Colors.red),
+          title: const Text('Excluir minha conta',
+              style: TextStyle(color: Colors.red)),
+          subtitle:
+              const Text('Remove permanentemente todos os seus dados'),
+          onTap: () => _showDeleteAccountConfirmation(context),
+        ),
+      ],
+    ),
+  );
+}
+
 
   // ======================= DIALOGS ========================
   // Exibe um diálogo de erro
@@ -657,181 +625,110 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  // ======================= BACKUP ========================
   // Exporta os dados do aplicativo para um arquivo de backup
-  Future<void> _exportBackup(BuildContext context, {required bool isConfidential}) async {
-    // Verificar se existem senhas para exportar
-    final hasPasswords = await PDFExportService.hasPasswordsToExport();
-    if (!hasPasswords) {
-      if (context.mounted) {
-        await showDialog(
-          context: context,
-          builder: (context) => const AlertDialog(
-            title: Text('Nenhuma senha encontrada'),
-            content: Text('Não há senhas para exportar.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-      return;
-    }
-    // Mostrar diálogo de confirmação para backup confidencial
-    if (isConfidential) {
-      final confirmed = await showDialog<bool>(
+Future<void> exportBackup(BuildContext context, {required bool isConfidential}) async {
+  final hasPasswords = await PDFExportService.hasPasswordsToExport();
+  if (!hasPasswords) {
+    if (context.mounted) {
+      await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Atenção'),
-          content: const Text(
-            'O backup confidencial irá incluir todas as suas senhas em texto legível. ' 
-            'Certifique-se de armazenar este arquivo em um local seguro.\n\n' 
-            'Deseja continuar?',
-          ),
+          title: const Text('Nenhuma senha encontrada'),
+          content: const Text('Não há senhas para exportar.'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Continuar'),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
             ),
           ],
         ),
       );
-      
-      if (confirmed != true) {
-        return; // Usuário cancelou
-      }
     }
+    return;
+  }
 
-    // Mostrar indicador de carregamento
-    showDialog(
+  if (isConfidential) {
+    final confirmed = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
+      builder: (context) => AlertDialog(
+        title: const Text('Atenção'),
+        content: const Text(
+          'O backup confidencial irá incluir todas as suas senhas em texto legível. '
+          'Certifique-se de armazenar este arquivo em um local seguro.\n\n'
+          'Deseja continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Continuar'),
+          ),
+        ],
       ),
     );
+    if (confirmed != true) return;
+  }
 
-    try {
-      // Gerar o PDF
-      final file = await PDFExportService.exportPasswordsToPDF(
-        isConfidential: isConfidential,
-      );
-      
-      // Fechar o indicador de carregamento
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        
-        // Mostrar diálogo de sucesso
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Backup ${isConfidential ? 'Confidencial ' : ''}Concluído'),
-            content: Text(
-              'O backup foi salvo em:\n${file.path}',
-              style: const TextStyle(fontSize: 14),
+  // diálogo de carregamento
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(
+      child: CircularProgressIndicator(),
+    ),
+  );
+
+  try {
+    final file = await PDFExportService.exportPasswordsToPDF(
+      isConfidential: isConfidential,
+    );
+
+    if (context.mounted) {
+      Navigator.of(context).pop(); // fecha o loading
+
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Backup ${isConfidential ? 'Confidencial ' : ''}Concluído'),
+          content: Text(
+            'O backup foi salvo em:\n${file.path}',
+            style: const TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar'),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Fechar'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  PDFExportService.openPDF(file);
-                },
-                child: const Text('Abrir PDF'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      // Fechar o indicador de carregamento em caso de erro
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        
-        // Mostrar mensagem de erro
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao gerar backup: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                PDFExportService.openPDF(file);
+              },
+              child: const Text('Abrir PDF'),
+            ),
+          ],
+        ),
+      );
     }
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Criando backup...'),
-              ],
-            ),
-          );
-        },
+  } catch (e) {
+    if (context.mounted) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao gerar backup: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
-
-      try {
-        // Criar o backup
-        final backupFile = await SettingsService.createBackup();
-        
-        if (context.mounted) {
-          Navigator.of(context).pop(); // Fechar diálogo de carregamento
-          
-          // Mostrar diálogo de sucesso
-          await showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Backup Criado'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Backup criado com sucesso em:'),
-                  const SizedBox(height: 8),
-                  SelectableText(
-                    backupFile.path,
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          Navigator.of(context).pop(); // Fechar diálogo de carregamento
-          _showErrorDialog(context, 'Erro ao criar backup', e.toString());
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro inesperado: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
+}
+
 
   // Importa um arquivo de backup para restaurar os dados
   Future<void> _importBackup(BuildContext context) async {
