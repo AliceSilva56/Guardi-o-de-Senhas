@@ -23,7 +23,7 @@ class PasswordModel {
     this.confidential = false,
     required this.createdAt,
     required this.lastModified,
-    this.isConfidential = false, // padrão é falso // novo
+    this.isConfidential = false, // padrão é falso
   });
 
   Map<String, dynamic> toMap() => {

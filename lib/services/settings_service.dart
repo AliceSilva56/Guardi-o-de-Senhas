@@ -27,6 +27,7 @@ class SettingsService {
   static const String _accountDeletionKey = 'account_deletion_date'; // Chave para data de exclusão da conta
   static const String _backupFolder = 'GuardiaoBackups'; // Pasta para armazenar backups
   static const String _backupExtension = '.gbackup'; // Extensão dos arquivos de backup
+  static const String _lastBackupKey = 'last_backup_timestamp'; // Chave para armazenar o timestamp do último backup
 
   Future<Box> _openBox() async {
     return await Hive.openBox(_boxName);
@@ -140,6 +141,22 @@ static Future<bool> verifyMasterPassword(String password) async {
     return prefs.getString(_confidentialPasswordKey);
   }
 
+  /// Salva o timestamp do último backup realizado
+  static Future<void> setLastBackupTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastBackupKey, DateTime.now().toIso8601String());
+  }
+
+  /// Obtém a data do último backup realizado
+  static Future<DateTime?> getLastBackupTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    final timestamp = prefs.getString(_lastBackupKey);
+    if (timestamp != null) {
+      return DateTime.parse(timestamp);
+    }
+    return null;
+  }
+
   /// ------------------
   /// ---- TEMA ----
   /// ------------------
@@ -198,6 +215,13 @@ static Future<bool> verifyMasterPassword(String password) async {
   // Restaura dados a partir de um arquivo de backup
   static Future<bool> restoreBackup(File backupFile) async {
     try {
+      final String filePath = backupFile.path.toLowerCase();
+      
+      // Se for um PDF, não podemos restaurar
+      if (filePath.endsWith('.pdf')) {
+        throw Exception('Não é possível restaurar de um arquivo PDF. Use a opção de exportação para gerar um arquivo .gbackup');
+      }
+      
       // Ler e descriptografar os dados
       final encryptedData = await backupFile.readAsString();
       final decryptedData = jsonDecode(_decryptData(encryptedData));

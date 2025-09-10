@@ -756,12 +756,75 @@ Future<void> exportBackup(BuildContext context, {required bool isConfidential}) 
 
       // Abrir seletor de arquivos
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['gbackup'],
+        type: FileType.any,
         allowMultiple: false,
       );
 
       if (result != null && result.files.single.path != null) {
+        // Verificar a extensão do arquivo manualmente
+        final filePath = result.files.single.path!.toLowerCase();
+        
+        // Verificar se é .gbackup ou .pdf
+        if (!filePath.endsWith('.gbackup') && !filePath.endsWith('.pdf')) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Por favor, selecione um arquivo com a extensão .gbackup ou .pdf'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          return;
+        }
+        
+        // Se for PDF, perguntar se deseja converter para .gbackup
+        if (filePath.endsWith('.pdf')) {
+          final shouldConvert = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Converter PDF para Backup'),
+              content: const Text('O arquivo selecionado é um PDF. Deseja criar um novo arquivo de backup (.gbackup) a partir dele?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Criar Backup'),
+                ),
+              ],
+            ),
+          );
+          
+          if (shouldConvert != true) {
+            return; // Usuário cancelou a conversão
+          }
+          
+          // Criar um novo arquivo .gbackup
+          try {
+            final backupFile = await PDFExportService.exportBackupFile();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Backup criado com sucesso: ${backupFile.path}'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+            return;
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erro ao criar backup a partir do PDF'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+        }
         final file = File(result.files.single.path!);
         
         // Mostrar diálogo de carregamento
@@ -868,36 +931,52 @@ Future<void> exportBackup(BuildContext context, {required bool isConfidential}) 
 
   Future<Widget> _getLastBackupInfo() async {
     try {
-      final backups = await SettingsService.listBackupFiles();
-      if (backups.isEmpty) {
+      // Obtém o timestamp do último backup salvo
+      final lastBackupDate = await SettingsService.getLastBackupTimestamp();
+      
+      if (lastBackupDate == null) {
         return const Text(
-          'Nenhum backup encontrado',
+          'Nenhum backup realizado',
           style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
         );
       }
       
-      // Ordena por data de modificação (mais recente primeiro)
-      backups.sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
-      final lastBackup = backups.first;
-      final file = File(lastBackup.path);
-      final stat = await file.stat();
-      final date = stat.modified;
-      final fileSize = (stat.size / 1024).toStringAsFixed(2); // Tamanho em KB
+      // Tenta obter informações adicionais do arquivo de backup
+      String sizeInfo = '';
+      String pathInfo = '';
+      
+      try {
+        final backups = await SettingsService.listBackupFiles();
+        if (backups.isNotEmpty) {
+          backups.sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+          final lastBackup = backups.first;
+          final file = File(lastBackup.path);
+          final stat = await file.stat();
+          final fileSize = (stat.size / 1024).toStringAsFixed(2); // Tamanho em KB
+          
+          sizeInfo = 'Tamanho: $fileSize KB';
+          pathInfo = 'Local: ${file.path}';
+        }
+      } catch (e) {
+        debugPrint('Erro ao obter informações adicionais do backup: $e');
+      }
       
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Último backup: ${DateFormat('dd/MM/yyyy HH:mm').format(date)}',
+            'Último backup: ${DateFormat('dd/MM/yyyy HH:mm').format(lastBackupDate)}',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Tamanho: $fileSize KB',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          Text(
-            'Local: ${file.path}',
+          if (sizeInfo.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              sizeInfo,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+          if (pathInfo.isNotEmpty) Text(
+            pathInfo,
             style: const TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'monospace'),
             overflow: TextOverflow.ellipsis,
             maxLines: 1,

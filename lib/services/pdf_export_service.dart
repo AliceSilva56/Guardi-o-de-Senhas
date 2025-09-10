@@ -1,5 +1,6 @@
 // lib/services/pdf_export_service.dart
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
@@ -8,6 +9,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:intl/intl.dart';
+import 'password_service.dart';
+import 'settings_service.dart';
+import '../models/password_model.dart';
 
 class PDFExportService {
   /// Exporta backup PDF com senhas "visíveis" (box 'passwords')
@@ -27,11 +31,13 @@ class PDFExportService {
     // 🔹 Cria o documento com o tema aplicado
     final pdf = pw.Document(theme: theme);
 
-    // open boxes dinamicamente (sem tipagem) para evitar problemas de model
-    final normalBox = await Hive.openBox('passwords');
-    final confidentialBox = await Hive.openBox('confidential_passwords');
-
     final now = DateTime.now();
+    
+    // Obtém as senhas usando o PasswordService
+    final normalPasswords = PasswordService.getAllPasswords(includeConfidential: false);
+    final confidentialPasswords = PasswordService.getAllPasswords(includeConfidential: true)
+        .where((p) => p.confidential)
+        .toList();
     final generatedAt = DateFormat('dd/MM/yyyy HH:mm').format(now);
 
     // Construção do documento
@@ -63,7 +69,7 @@ class PDFExportService {
                 borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
               ),
               child: pw.Text(
-                '⚠️ AVISO DE CONFIDENCIALIDADE\n\n'
+                '[!] AVISO DE CONFIDENCIALIDADE\n\n'
                 'Este documento contém informações sensíveis (senhas). '
                 'Mantenha-o em local seguro e não compartilhe com terceiros.',
                 style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
@@ -76,11 +82,11 @@ class PDFExportService {
           // Seção: Senhas Visíveis
           content.add(pw.Text('SENHAS VISÍVEIS', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)));
           content.add(pw.Divider());
-          if (normalBox.isEmpty) {
+          if (normalPasswords.isEmpty) {
             content.add(pw.Text('Nenhuma senha visível encontrada.', style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic)));
           } else {
-            for (final p in normalBox.values) {
-              content.add(_buildPasswordEntry(p)); // ✅ Aqui garante que cada senha apareça
+            for (final p in normalPasswords) {
+              content.add(_buildPasswordEntry(p.toMap()));
             }
           }
 
@@ -89,11 +95,11 @@ class PDFExportService {
           // Seção: Senhas Confidenciais
           content.add(pw.Text('SENHAS CONFIDENCIAIS', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)));
           content.add(pw.Divider());
-          if (confidentialBox.isEmpty) {
+          if (confidentialPasswords.isEmpty) {
             content.add(pw.Text('Nenhuma senha confidencial encontrada.', style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic)));
           } else {
-            for (final p in confidentialBox.values) {
-              content.add(_buildPasswordEntry(p)); // ✅ Aqui também
+            for (final p in confidentialPasswords) {
+              content.add(_buildPasswordEntry(p.toMap()));
             }
           }
 
@@ -103,7 +109,7 @@ class PDFExportService {
           content.add(pw.Divider());
           content.add(
             pw.Text(
-              'Resumo: ${normalBox.length} senhas visíveis • ${confidentialBox.length} senhas confidenciais',
+              'Resumo: ${normalPasswords.length} senhas visíveis • ${confidentialPasswords.length} senhas confidenciais',
               style: pw.TextStyle(fontSize: 10),
             ),
           );
@@ -121,6 +127,9 @@ class PDFExportService {
       final file = File('${dir.path}/$fileName');
 
       await file.writeAsBytes(await pdf.save());
+
+      // Salva o timestamp do backup
+      await SettingsService.setLastBackupTimestamp();
 
       // Tenta abrir
       await OpenFile.open(file.path);
@@ -146,109 +155,88 @@ class PDFExportService {
   static String _formatForFilename(DateTime d) =>
       '${d.year}-${_twoDigits(d.month)}-${_twoDigits(d.day)}_${_twoDigits(d.hour)}-${_twoDigits(d.minute)}-${_twoDigits(d.second)}';
 
-  static pw.Widget _buildPasswordEntry(dynamic p) {
-    final title = _firstNonNullString(p, [
-      (x) => x['title'],
-      (x) => x['name'],
-      (x) => x['site'],
-      (x) => x['service'],
-      (x) => (x as dynamic).title,
-      (x) => (x as dynamic).name,
-      (x) => (x as dynamic).site,
-      (x) => (x as dynamic).service,
-    ]);
-
-    final username = _firstNonNullString(p, [
-      (x) => x['username'],
-      (x) => x['user'],
-      (x) => x['email'],
-      (x) => x['login'],
-      (x) => (x as dynamic).username,
-      (x) => (x as dynamic).user,
-      (x) => (x as dynamic).email,
-      (x) => (x as dynamic).login,
-    ]);
-
-    final pass = _firstNonNullString(p, [
-      (x) => x['password'],
-      (x) => x['pwd'],
-      (x) => x['pass'],
-      (x) => (x as dynamic).password,
-      (x) => (x as dynamic).pwd,
-      (x) => (x as dynamic).pass,
-    ]);
-
-    final category = _firstNonNullString(p, [
-      (x) => x['category'],
-      (x) => x['folder'],
-      (x) => x['group'],
-      (x) => (x as dynamic).category,
-      (x) => (x as dynamic).folder,
-      (x) => (x as dynamic).group,
-    ]);
-
-    final notes = _firstNonNullString(p, [
-      (x) => x['notes'],
-      (x) => x['note'],
-      (x) => x['description'],
-      (x) => (x as dynamic).notes,
-      (x) => (x as dynamic).note,
-      (x) => (x as dynamic).description,
-    ]);
-
-    final displayTitle = title ?? 'Sem título';
-    final displayUsername = username ?? '—';
-    final displayPass = pass ?? '—';
-    final displayCategory = category ?? 'Sem Categoria';
-
-    final children = <pw.Widget>[
-      pw.Text('Site/Serviço: $displayTitle', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-      pw.SizedBox(height: 2),
-      pw.Text('Usuário/Email: $displayUsername', style: pw.TextStyle(fontSize: 10)),
-      pw.SizedBox(height: 2),
-      pw.Text('Senha: $displayPass', style: pw.TextStyle(fontSize: 10)),
-      pw.SizedBox(height: 2),
-      pw.Text('Categoria: $displayCategory', style: pw.TextStyle(fontSize: 10)),
-    ];
-
-    if (notes != null && notes.trim().isNotEmpty) {
-      children.add(pw.SizedBox(height: 2));
-      children.add(pw.Text('Notas: ${notes.trim()}', style: pw.TextStyle(fontSize: 10)));
+  static pw.Widget _buildPasswordEntry(Map<String, dynamic> p) {
+    // Função auxiliar para obter valor de forma segura
+    String getValue(String key) {
+      try {
+        return p[key]?.toString() ?? '';
+      } catch (e) {
+        return '';
+      }
     }
 
-    children.add(pw.SizedBox(height: 6));
-    children.add(pw.Divider());
+    // Obtém os valores diretamente do mapa
+    final title = getValue('siteName').isNotEmpty 
+        ? getValue('siteName')
+        : getValue('title').isNotEmpty 
+            ? getValue('title')
+            : getValue('name').isNotEmpty
+                ? getValue('name')
+                : 'Sem título';
 
-    return pw.Padding(
-      padding: pw.EdgeInsets.symmetric(vertical: 6),
-      child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: children),
+    final username = getValue('username').isNotEmpty
+        ? getValue('username')
+        : getValue('user').isNotEmpty
+            ? getValue('user')
+            : getValue('email').isNotEmpty
+                ? getValue('email')
+                : getValue('login').isNotEmpty
+                    ? getValue('login')
+                    : 'Não informado';
+
+    // Mostra a senha real no PDF
+    final password = getValue('password');
+    
+    final category = getValue('category').isNotEmpty
+        ? getValue('category')
+        : getValue('folder').isNotEmpty
+            ? getValue('folder')
+            : getValue('group').isNotEmpty
+                ? getValue('group')
+                : 'Geral';
+
+    final notes = getValue('notes').isNotEmpty
+        ? getValue('notes')
+        : getValue('note').isNotEmpty
+            ? getValue('note')
+            : getValue('description').isNotEmpty
+                ? getValue('description')
+                : '';
+
+    return pw.Container(
+      margin: pw.EdgeInsets.only(bottom: 12),
+      padding: pw.EdgeInsets.all(8),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(width: 0.5),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(title, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 4),
+          pw.Text('Usuário: $username', style: pw.TextStyle(fontSize: 10)),
+          pw.Text('Senha: $password', style: pw.TextStyle(fontSize: 10)),
+          if (category.isNotEmpty) 
+            pw.Text('Categoria: $category', style: pw.TextStyle(fontSize: 10)),
+          if (notes.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            pw.Text('Notas: $notes', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic)),
+          ],
+        ],
+      ),
     );
   }
 
   static String? _firstNonNullString(dynamic p, List<Function> accessors) {
-    for (final accessor in accessors) {
+    for (var accessor in accessors) {
       try {
-        final val = accessor(p);
-        if (val == null) continue;
-        final s = val.toString();
-        if (s.trim().isNotEmpty) return s;
+        final value = accessor(p);
+        if (value != null && value.toString().isNotEmpty) {
+          return value.toString();
+        }
       } catch (_) {}
     }
-
-    try {
-      final toJson = (p as dynamic).toJson;
-      if (toJson is Function) {
-        final map = toJson();
-        if (map is Map) {
-          for (final k in ['title','name','site','service','username','email','password','category','notes']) {
-            if (map.containsKey(k) && map[k] != null && map[k].toString().trim().isNotEmpty) {
-              return map[k].toString();
-            }
-          }
-        }
-      }
-    } catch (_) {}
-
     return null;
   }
   // ============================================================
@@ -300,6 +288,62 @@ class PDFExportService {
 
   /// Abre o PDF com o aplicativo padrão do dispositivo
   static Future<void> openPDF(File file) async {
-    await OpenFile.open(file.path);
+    try {
+      await OpenFile.open(file.path);
+    } catch (e) {
+      debugPrint('Erro ao abrir o PDF: $e');
+      rethrow;
+    }
+  }
+
+  /// Exporta um arquivo de backup no formato .gbackup que pode ser importado posteriormente
+  static Future<File> exportBackupFile({bool isConfidential = false}) async {
+    try {
+      // Obtém o diretório de documentos do aplicativo
+      final directory = await getApplicationDocumentsDirectory();
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'backup_${isConfidential ? 'confidencial_' : ''}$timestamp.gbackup';
+      final file = File('${directory.path}/$fileName');
+
+      // Obtém as senhas
+      final passwords = PasswordService.getAllPasswords(includeConfidential: isConfidential);
+      
+      // Obtém as configurações
+      final settingsBox = await Hive.openBox('settings');
+      final settings = {
+        'theme': settingsBox.get('theme_mode', defaultValue: 'system'),
+        'biometry': settingsBox.get('biometry_enabled', defaultValue: false),
+      };
+      
+      // Obtém o perfil do usuário
+      final profileBox = await Hive.openBox('profile');
+      final profile = {
+        'name': profileBox.get('name', defaultValue: ''),
+        'email': profileBox.get('email', defaultValue: ''),
+        'avatar': profileBox.get('avatar', defaultValue: ''),
+      };
+
+      // Prepara os dados para exportação
+      final Map<String, dynamic> backupData = {
+        'version': 1,
+        'exportedAt': DateTime.now().toIso8601String(),
+        'isConfidential': isConfidential,
+        'settings': settings,
+        'profile': profile,
+        'passwords': passwords.map((p) => p.toMap()).toList(),
+      };
+
+      // Converte para JSON e salva o arquivo
+      final jsonData = jsonEncode(backupData);
+      await file.writeAsString(jsonData);
+      
+      // Salva o timestamp do último backup
+      await SettingsService.setLastBackupTimestamp();
+      
+      return file;
+    } catch (e) {
+      debugPrint('Erro ao exportar backup: $e');
+      rethrow;
+    }
   }
 }

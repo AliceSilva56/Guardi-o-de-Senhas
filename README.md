@@ -1,5 +1,13 @@
 # 📖 Guardião de Senhas – Roadmap
 
+💙 Últimas Atualizações 10/09/2025
+
+- O backup importar e exportar esta funcionando.
+
+- Configuração da funcionalidade que mostra o último backup realizado.
+
+- Configuração das funcionalidades de backup por PDF, todas as senhas aparecem com suas informações passadas pelo usuário.
+
 💙 Últimas Atualizações 09/09/2025
 
 - Configuração do backup por PDF (Mas o PDF está indo vazio, verificar qual é o problema)
