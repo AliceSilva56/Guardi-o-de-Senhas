@@ -1,6 +1,7 @@
 // lib/services/pdf_export_service.dart
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
@@ -343,6 +344,195 @@ class PDFExportService {
       return file;
     } catch (e) {
       debugPrint('Erro ao exportar backup: $e');
+      rethrow;
+    }
+  }
+
+  /// Extrai senhas de um arquivo PDF gerado pelo aplicativo
+  static Future<List<PasswordModel>> extractPasswordsFromPDF(File pdfFile) async {
+    try {
+      final List<PasswordModel> passwords = [];
+      
+      debugPrint('🔄 Iniciando extração de senhas do arquivo: ${pdfFile.path}');
+      
+      // Verifica se o arquivo existe e tem conteúdo
+      if (!await pdfFile.exists()) {
+        debugPrint('❌ Erro: O arquivo não existe: ${pdfFile.path}');
+        throw Exception('O arquivo não existe: ${pdfFile.path}');
+      }
+      
+      final fileSize = await pdfFile.length();
+      debugPrint('📄 Tamanho do arquivo: $fileSize bytes');
+      
+      if (fileSize == 0) {
+        debugPrint('⚠️ Aviso: O arquivo está vazio');
+        return [];
+      }
+      
+      // Lê o conteúdo do PDF como texto
+      debugPrint('🔍 Executando pdftotext no arquivo...');
+      
+      // Usa parâmetros adicionais para melhor extração de texto
+      final process = await Process.run('pdftotext', [
+        '-layout',  // Mantém o layout original
+        '-eol', 'unix',  // Usa quebras de linha Unix
+        '-enc', 'UTF-8',  // Codificação UTF-8
+        pdfFile.path,  // Arquivo de entrada
+        '-'  // Saída para stdout
+      ]);
+      
+      if (process.exitCode != 0) {
+        debugPrint('❌ Erro ao executar pdftotext. Código: ${process.exitCode}');
+        debugPrint('📝 Saída de erro: ${process.stderr}');
+        throw Exception('Falha ao ler o PDF: ${process.stderr}');
+      }
+      
+      String pdfText = process.stdout.toString().trim();
+      debugPrint('📝 Conteúdo bruto do PDF (${pdfText.length} caracteres)');
+      
+      // Log apenas do início e fim do conteúdo para não poluir os logs
+      if (pdfText.isNotEmpty) {
+        final sampleSize = 200;
+        final start = pdfText.length > sampleSize 
+            ? pdfText.substring(0, sampleSize) 
+            : pdfText;
+        final end = pdfText.length > sampleSize * 2 
+            ? pdfText.substring(pdfText.length - sampleSize) 
+            : '';
+            
+        debugPrint('--- INÍCIO DO CONTEÚDO (amostra) ---');
+        debugPrint(start);
+        if (end.isNotEmpty) {
+          debugPrint('... [${pdfText.length - (sampleSize * 2)} caracteres omitidos] ...');
+          debugPrint(end);
+        }
+        debugPrint('--- FIM DO CONTEÚDO ---');
+      } else {
+        debugPrint('⚠️ AVISO: O conteúdo extraído do PDF está vazio!');
+        return [];
+      }
+      
+      if (pdfText.isEmpty) {
+        debugPrint('AVISO: O conteúdo extraído do PDF está vazio!');
+        return [];
+      }
+      
+      // Normaliza quebras de linha
+      pdfText = pdfText.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+      
+      // Padrão flexível para identificar entradas de senha
+      final patterns = [
+        // Padrão 1: Formato estruturado com rótulos
+        RegExp(
+          r'(?:Site|Aplicativo|App)[:/]?\s*([^\n]+?)\s*'  // Site/App
+          r'(?:Usu[áa]rio(?:/|:)Email|Login|Email|Usu[áa]rio)[:/]?\s*([^\n]*?)\s*'  // Usuário/Email
+          r'Senha[:/]?\s*([^\n]*?)\s*'  // Senha
+          r'(?:Categoria[:/]?\s*([^\n]*?))?\s*'  // Categoria (opcional)
+          r'(?=\n\S|\n\s*\n|\Z)',  // Lookahead para o próximo item ou fim
+          caseSensitive: false,
+          dotAll: true,
+        ),
+        // Padrão 2: Formato tabular
+        RegExp(
+          r'([^\n:]+?)[:/]?\s*([^\n]*?)\s*'  // Site/App
+          r'([^\n:]+?)[:/]?\s*([^\n]*?)\s*'  // Usuário/Email
+          r'([^\n:]+?)[:/]?\s*([^\n]*?)\s*'  // Senha
+          r'(?:([^\n:]+?)[:/]?\s*([^\n]*?))?\s*',  // Categoria (opcional)
+          caseSensitive: false,
+          dotAll: true,
+        )
+      ];
+      
+      // Tenta cada padrão até encontrar correspondências
+      for (final pattern in patterns) {
+        debugPrint('🔍 Tentando padrão: ${pattern.pattern}');
+        final matches = pattern.allMatches(pdfText);
+        
+        if (matches.isNotEmpty) {
+          debugPrint('✅ Encontradas ${matches.length} correspondências com o padrão');
+          
+          for (final match in matches) {
+            try {
+              String siteName, username, password, category;
+              
+              // Determina os grupos de captura com base no padrão
+              if (pattern == patterns[0]) {
+                // Padrão estruturado com rótulos
+                siteName = (match.group(1) ?? '').trim();
+                username = (match.group(2) ?? '').trim();
+                password = (match.group(3) ?? '').trim();
+                category = (match.group(4) ?? 'Geral').trim();
+              } else {
+                // Padrão tabular
+                siteName = (match.group(2) ?? '').trim();
+                username = (match.group(4) ?? '').trim();
+                password = (match.group(6) ?? '').trim();
+                category = (match.group(8) ?? 'Geral').trim();
+              }
+              
+              // Só adiciona se tiver pelo menos site/app e senha
+              if (siteName.isNotEmpty && password.isNotEmpty) {
+                debugPrint('🔑 Processando senha: $siteName - $username - $category');
+                
+                final passwordModel = PasswordModel(
+                  id: 'pdf_${DateTime.now().millisecondsSinceEpoch}_${passwords.length}',
+                  siteName: siteName,
+                  username: username,
+                  password: password,
+                  category: category,
+                  notes: 'Importado do PDF em ${DateTime.now().toIso8601String()}',
+                  createdAt: DateTime.now(),
+                  lastModified: DateTime.now(),
+                  confidential: false,
+                  isConfidential: false,
+                );
+                
+                // Verifica se já existe uma senha idêntica
+                final exists = passwords.any((p) => 
+                  p.siteName == passwordModel.siteName &&
+                  p.username == passwordModel.username &&
+                  p.password == passwordModel.password &&
+                  p.category == passwordModel.category
+                );
+                
+                if (!exists) {
+                  passwords.add(passwordModel);
+                } else {
+                  debugPrint('ℹ️ Senha duplicada ignorada: $siteName - $username');
+                }
+              }
+            } catch (e) {
+              debugPrint('⚠️ Erro ao processar entrada de senha: $e');
+            }
+          }
+          
+          // Se encontrou senhas com este padrão, não tenta os outros
+          if (passwords.isNotEmpty) {
+            debugPrint('✅ ${passwords.length} senhas importadas com sucesso');
+            break;
+          }
+        } else {
+          debugPrint('ℹ️ Nenhuma correspondência encontrada com este padrão');
+        }
+      }
+      
+      if (passwords.isEmpty) {
+        debugPrint('⚠️ AVISO: Nenhuma senha foi encontrada no PDF. Verifique se o formato do PDF é compatível.');
+        debugPrint('📝 Dica: O PDF deve conter as senhas em um formato estruturado com os campos:');
+        debugPrint('       Site/App: [nome]');
+        debugPrint('       Usuário/Email: [usuário]');
+        debugPrint('       Senha: [senha]');
+        debugPrint('       Categoria: [categoria]');
+      } else {
+        debugPrint('✅ ${passwords.length} senhas extraídas com sucesso do PDF');
+      }
+      
+      return passwords;
+    } catch (e, stackTrace) {
+      debugPrint('❌ ERRO CRÍTICO ao extrair senhas do PDF:');
+      debugPrint('🔍 Mensagem: $e');
+      debugPrint('📝 Stack trace: $stackTrace');
+      debugPrint('💡 Dica: Verifique se o arquivo PDF não está corrompido e se contém senhas no formato esperado.');
       rethrow;
     }
   }

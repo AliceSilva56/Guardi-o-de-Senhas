@@ -1,6 +1,9 @@
 # 📖 Guardião de Senhas – Roadmap
 
+
 💙 Últimas Atualizações 10/09/2025
+
+- Atualização do importar, para que o app receba as senhas do PDF.
 
 - O backup importar e exportar esta funcionando.
 

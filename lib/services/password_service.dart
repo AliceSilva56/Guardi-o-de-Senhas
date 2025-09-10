@@ -2,7 +2,9 @@
 // Este serviço utiliza o Hive para armazenar senhas de forma segura, incluindo funcionalidades para backup e restauração, geração de senhas, verificação de força de senha e modo confidencial.
 
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
 import '../models/password_model.dart';
@@ -83,9 +85,15 @@ class PasswordService {
   }
 
   // ---------------- CRUD ----------------
-  static Future<void> addPassword(PasswordModel pwd) async {
-    final box = Hive.box(passwordsBoxName);
-    await box.put(pwd.id, pwd.toMap());
+  /// Adiciona uma nova senha ao Hive
+  Future<void> addPassword(PasswordModel pwd) async {
+    try {
+      final box = Hive.box<Map<dynamic, dynamic>>(passwordsBoxName);
+      await box.put(pwd.id, pwd.toMap());
+    } catch (e) {
+      debugPrint('Erro ao adicionar senha: $e');
+      rethrow;
+    }
   }
 
   static Future<void> editPassword(String id, PasswordModel pwd) async {
@@ -163,7 +171,39 @@ class PasswordService {
     return {'level': 'strong', 'text': 'Forte'};
   }
 
-  // ---------------- Backup ----------------
+  // ---------------- Backup e Restauração ----------------
+  /// Verifica se uma senha com os mesmos dados já existe
+  Future<bool> passwordExists({
+    required String siteName,
+    required String username,
+    required String password,
+  }) async {
+    try {
+      final box = Hive.box<Map<dynamic, dynamic>>(passwordsBoxName);
+      final allPasswords = box.values.toList();
+      
+      return allPasswords.any((p) {
+        final pwdSiteName = p['siteName']?.toString().toLowerCase() ?? '';
+        final pwdUsername = p['username']?.toString().toLowerCase() ?? '';
+        final pwdPassword = p['password']?.toString() ?? '';
+        
+        return pwdSiteName == siteName.toLowerCase() &&
+               pwdUsername == username.toLowerCase() &&
+               pwdPassword == password;
+      });
+    } catch (e) {
+      debugPrint('Erro ao verificar senha existente: $e');
+      return true; // Em caso de erro, assume que já existe para evitar duplicação
+    }
+  }
+
+  /// Exporta todas as senhas para um mapa (pode ser convertido para JSON)
+  static Map<String, dynamic> exportPasswords() {
+    final box = Hive.box(passwordsBoxName);
+    final all = box.values.toList();
+    return {'passwords': all};
+  }
+
   static String exportBackup() {
     final box = Hive.box(passwordsBoxName);
     final settings = Hive.box(settingsBoxName).toMap();

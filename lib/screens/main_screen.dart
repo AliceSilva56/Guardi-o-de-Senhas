@@ -383,8 +383,9 @@ class _MainScreenState extends State<MainScreen> {
                   lastModified: DateTime.now(),
                 );
 
+                final passwordService = PasswordService();
                 if (editing == null) {
-                  await PasswordService.addPassword(model);
+                  await passwordService.addPassword(model);
                 } else {
                   await PasswordService.editPassword(id, model);
                 }

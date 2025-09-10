@@ -2,7 +2,9 @@
 // Este arquivo contém as configurações do aplicativo, incluindo opções de segurança, personalização e dados
 //Arquivo settings_screen.dart para Configurações do Guardião de Senhas
 
+import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -777,13 +779,13 @@ Future<void> exportBackup(BuildContext context, {required bool isConfidential}) 
           return;
         }
         
-        // Se for PDF, perguntar se deseja converter para .gbackup
+        // Se for PDF, extrair as senhas e adicionar ao app
         if (filePath.endsWith('.pdf')) {
-          final shouldConvert = await showDialog<bool>(
+          final shouldImport = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Converter PDF para Backup'),
-              content: const Text('O arquivo selecionado é um PDF. Deseja criar um novo arquivo de backup (.gbackup) a partir dele?'),
+              title: const Text('Importar Senhas do PDF'),
+              content: const Text('Deseja extrair e importar as senhas deste PDF para o aplicativo?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -791,34 +793,329 @@ Future<void> exportBackup(BuildContext context, {required bool isConfidential}) 
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Criar Backup'),
+                  child: const Text('Importar Senhas'),
                 ),
               ],
             ),
           );
           
-          if (shouldConvert != true) {
-            return; // Usuário cancelou a conversão
+          if (shouldImport != true) {
+            return; // Usuário cancelou a importação
           }
           
-          // Criar um novo arquivo .gbackup
+          // Mostrar diálogo de carregamento
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext context) {
+                return const AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Extraindo senhas do PDF...'),
+                    ],
+                  ),
+                );
+              },
+            );
+          }
+          
           try {
-            final backupFile = await PDFExportService.exportBackupFile();
+            // Verificar se o arquivo PDF existe e é válido
+            final pdfFile = File(filePath);
+            debugPrint('Iniciando extração de senhas do arquivo: ${pdfFile.path}');
+            
+            // Verificar tamanho do arquivo
+            final fileSize = await pdfFile.length();
+            const maxFileSize = 10 * 1024 * 1024; // 10MB
+            
+            if (fileSize > maxFileSize) {
+              throw Exception('O arquivo é muito grande (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB). '
+                  'O tamanho máximo permitido é 10 MB.');
+            }
+            
+            // Verificar se o arquivo é um PDF válido
+            final bytes = await pdfFile.readAsBytes();
+            if (bytes.length < 4 || 
+                !(bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) && // %PDF
+                !(bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x25 && bytes[3] == 0x45)) { // %PS
+              throw Exception('O arquivo selecionado não parece ser um PDF válido.');
+            }
+            
+            // Mostrar diálogo de carregamento detalhado
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Backup criado com sucesso: ${backupFile.path}'),
-                  backgroundColor: Colors.green,
-                ),
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Processando PDF'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Extraindo senhas do PDF...\nIsso pode levar alguns instantes.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
             }
-            return;
-          } catch (e) {
+            
+            final passwords = await PDFExportService.extractPasswordsFromPDF(pdfFile)
+                .timeout(const Duration(seconds: 30), onTimeout: () {
+              debugPrint('Tempo limite excedido ao extrair senhas do PDF');
+              throw TimeoutException('A extração de senhas demorou muito para ser concluída');
+            });
+            
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Erro ao criar backup a partir do PDF'),
-                  backgroundColor: Colors.red,
+              Navigator.of(context).pop(); // Fechar diálogo de carregamento
+              
+              if (passwords.isEmpty) {
+                await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Nenhuma senha encontrada'),
+                    content: const Text(
+                      'Não foi possível encontrar senhas no formato esperado no PDF. '
+                      'Certifique-se de que o PDF foi gerado pelo Guardião de Senhas.'
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+                return;
+              }
+              
+              // Mostrar confirmação antes de importar
+              final confirmImport = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Confirmar Importação'),
+                  content: Text(
+                    'Foram encontradas ${passwords.length} senhas no PDF. '
+                    'Deseja importá-las para o aplicativo?\n\n'
+                    'Apenas senhas que ainda não existem no aplicativo serão adicionadas.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Importar'),
+                    ),
+                  ],
+                ),
+              );
+              
+              if (confirmImport != true) {
+                return; // Usuário cancelou a importação
+              }
+              
+              // Mostrar barra de progresso durante a importação
+              int addedCount = 0;
+              int processed = 0;
+              final total = passwords.length;
+              final passwordService = PasswordService();
+              
+              // Diálogo de progresso
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (BuildContext context) {
+                  return StatefulBuilder(
+                    builder: (context, setState) {
+                      return AlertDialog(
+                        title: const Text('Importando Senhas'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            LinearProgressIndicator(
+                              value: processed / total,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Processando $processed de $total senhas...\n'
+                              'Adicionadas: $addedCount',
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+              
+              // Importar senhas em lotes para não travar a interface
+              final batchSize = 5;
+              for (var i = 0; i < passwords.length; i += batchSize) {
+                final batch = passwords.sublist(
+                  i,
+                  i + batchSize > passwords.length ? passwords.length : i + batchSize,
+                );
+                
+                for (final password in batch) {
+                  try {
+                    // Verifica se já existe uma senha com os mesmos dados
+                    final exists = await passwordService.passwordExists(
+                      siteName: password.siteName,
+                      username: password.username,
+                      password: password.password,
+                    );
+                    
+                    if (!exists) {
+                      await passwordService.addPassword(password);
+                      addedCount++;
+                    }
+                    
+                    processed++;
+                    
+                    // Atualizar a interface para mostrar o progresso
+                    if (context.mounted) {
+                      // Isso irá reconstruir o diálogo com os valores atualizados
+                      Navigator.of(context, rootNavigator: true).pop();
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Importando Senhas'),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                LinearProgressIndicator(
+                                  value: processed / total,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Processando $processed de $total senhas...\n'
+                                  'Adicionadas: $addedCount',
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  } catch (e) {
+                    debugPrint('Erro ao processar senha: $e');
+                    processed++;
+                  }
+                }
+                
+                // Pequena pausa para não sobrecarregar a UI
+                await Future.delayed(const Duration(milliseconds: 100));
+              }
+              
+              // Fechar o diálogo de progresso
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true).pop();
+                
+                // Mostrar resultado final
+                final message = addedCount > 0
+                    ? '$addedCount senha(s) importada(s) com sucesso!'
+                    : 'Nenhuma senha nova foi importada (todas já existiam no aplicativo).';
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                    backgroundColor: addedCount > 0 ? Colors.green : Colors.blue,
+                    duration: const Duration(seconds: 5),
+                    action: SnackBarAction(
+                      label: 'OK',
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      },
+                    ),
+                  ),
+                );
+              }
+            }
+            return;
+            
+          } catch (e, stackTrace) {
+            debugPrint('Erro durante a importação de senhas do PDF: $e');
+            debugPrint('Stack trace: $stackTrace');
+            
+            if (context.mounted) {
+              Navigator.of(context, rootNavigator: true).pop(); // Fechar diálogo de carregamento
+              
+              String errorTitle = 'Erro na Importação';
+              String errorMessage = 'Ocorreu um erro ao processar o arquivo PDF.';
+              String errorDetails = e.toString();
+              
+              // Mapeamento de erros comuns para mensagens mais amigáveis
+              if (e is TimeoutException) {
+                errorMessage = 'A operação demorou muito para ser concluída.';
+                errorDetails = 'O processamento do PDF excedeu o tempo limite. Tente novamente com um arquivo menor ou mais simples.';
+              } else if (e.toString().contains('pdftotext')) {
+                errorMessage = 'Não foi possível extrair texto do PDF.';
+                errorDetails = 'Verifique se o arquivo não está protegido por senha, corrompido ou em um formato não suportado.';
+              } else if (e.toString().contains('permission')) {
+                errorMessage = 'Permissão negada para acessar o arquivo.';
+                errorDetails = 'Verifique se o aplicativo tem permissão para acessar arquivos no dispositivo.';
+              } else if (e.toString().contains('corrupt')) {
+                errorMessage = 'O arquivo PDF parece estar corrompido.';
+                errorDetails = 'Tente abrir o arquivo em outro leitor de PDF para verificar se ele está íntegro.';
+              } else if (e.toString().contains('password') || e.toString().contains('senha')) {
+                errorMessage = 'O PDF está protegido por senha.';
+                errorDetails = 'Remova a proteção do PDF antes de tentar importá-lo.';
+              }
+              
+              // Mostrar diálogo de erro detalhado
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(errorTitle),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(errorMessage, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        const Text('Detalhes do erro:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          errorDetails,
+                          style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Dica: Certifique-se de que o PDF foi gerado pelo Guardião de Senhas e não está protegido por senha.',
+                          style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Entendi'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        // Tenta novamente
+                        _importBackup(context);
+                      },
+                      child: const Text('Tentar Novamente'),
+                    ),
+                  ],
                 ),
               );
             }

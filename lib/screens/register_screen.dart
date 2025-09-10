@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:guardiao_de_senhas/screens/main_screen.dart';
 import '../theme/app_colors.dart';

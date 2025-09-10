@@ -291,8 +291,9 @@ Future<void> addPasswordDialog({PasswordModel? editing, String? forceCategory}) 
                   lastModified: DateTime.now(),
                 );
 
+                final passwordService = PasswordService();
                 if (editing == null) {
-                  await PasswordService.addPassword(model);
+                  await passwordService.addPassword(model);
                 } else {
                   await PasswordService.editPassword(id, model);
                 }
@@ -653,8 +654,9 @@ Future<void> showAddPasswordDialog(BuildContext context, {PasswordModel? editing
                 lastModified: DateTime.now(),
               );
 
+              final passwordService = PasswordService();
               if (editing == null) {
-                await PasswordService.addPassword(model);
+                await passwordService.addPassword(model);
               } else {
                 await PasswordService.editPassword(id, model);
               }
