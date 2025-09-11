@@ -17,11 +17,26 @@ import 'services/password_service.dart'; // Importa o serviço de senhas
 import 'services/settings_service.dart';
 
 void main() async {
-   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter(); // se estiver usando hive_flutter
-  await PasswordService.init();
+  // Initialize Flutter bindings
+  WidgetsFlutterBinding.ensureInitialized();
   
-  // Verifica se há uma exclusão de conta pendente
+  // Initialize Hive
+  await Hive.initFlutter();
+  
+  // Open Hive boxes
+  if (!Hive.isBoxOpen('guardiao_passwords')) {
+    await Hive.openBox('guardiao_passwords');
+  }
+  
+  if (!Hive.isBoxOpen('settings')) {
+    await Hive.openBox('settings');
+  }
+  
+  if (!Hive.isBoxOpen('profile')) {
+    await Hive.openBox('profile');
+  }
+  
+  // Check for pending account deletion
   final shouldDelete = await SettingsService.checkAndProcessDeletion();
   
   runApp(

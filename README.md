@@ -1,5 +1,8 @@
 # 📖 Guardião de Senhas – Roadmap
 
+💙 Últimas Atualizações 11/09/2025
+
+- tive que concertar o salvamento da adição de senhas.
 
 💙 Últimas Atualizações 10/09/2025
 

@@ -3,6 +3,7 @@
 
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
@@ -12,108 +13,205 @@ import 'package:crypto/crypto.dart'; // adicionar crypto se quiser hash mais tar
 
 class PasswordService {
   static const String passwordsBoxName = 'guardiao_passwords';
-  static const String settingsBoxName = 'guardiao_settings';
+  static const String settingsBoxName = 'settings';
   static const String masterKey = 'master_password_hash';
   static const String confidentialModeKey = 'confidential_mode_enabled';
   static const String confidentialPasswordKey = 'confidential_password_hash';
 
   static String? _masterPassword;
 
-  /// Inicializa o Hive - chame no main()
-  static Future<void> init() async {
-    await Hive.initFlutter.call(); // se estiver usando hive_flutter, caso contrário chame Hive.init
-    await Hive.openBox(passwordsBoxName);
-    await Hive.openBox(settingsBoxName);
-  }
+  // Helper methods to get boxes
+  static Box _getPasswordsBox() => Hive.box(passwordsBoxName);
+  static Box _getSettingsBox() => Hive.box(settingsBoxName);
 
   // ---------------- Master Password ----------------
   /// Define senha mestra (armazenada como hash básico; para produção usar PBKDF2/Argon2)
-  static void setMasterPassword(String plain) {
-    _masterPassword = plain;
-    final box = Hive.box(settingsBoxName);
-    final hash = sha256.convert(utf8.encode(plain)).toString();
-    box.put(masterKey, hash);
+  static Future<void> setMasterPassword(String plain) async {
+    try {
+      _masterPassword = plain;
+      final box = _getSettingsBox();
+      final hash = sha256.convert(utf8.encode(plain)).toString();
+      await box.put(masterKey, hash);
+    } catch (e) {
+      debugPrint('Error setting master password: $e');
+      rethrow;
+    }
   }
 
   /// Verifica senha mestra
   static bool verifyMasterPassword(String plain) {
-    final box = Hive.box(settingsBoxName);
-    final saved = box.get(masterKey);
-    if (saved == null) return false;
-    final hash = sha256.convert(utf8.encode(plain)).toString();
-    return saved == hash;
+    try {
+      final box = _getSettingsBox();
+      final saved = box.get(masterKey);
+      if (saved == null) return false;
+      final hash = sha256.convert(utf8.encode(plain)).toString();
+      return saved == hash;
+    } catch (e) {
+      debugPrint('Error verifying master password: $e');
+      return false;
+    }
   }
 
   /// Checa se já existe master
   static bool hasMasterPassword() {
-    final box = Hive.box(settingsBoxName);
-    return box.containsKey(masterKey);
+    try {
+      final box = _getSettingsBox();
+      return box.containsKey(masterKey);
+    } catch (e) {
+      debugPrint('Error checking master password: $e');
+      return false;
+    }
   }
 
   // ---------------- Confidential Mode (global flag) ----------------
   static bool isConfidentialModeEnabled() {
-    final box = Hive.box(settingsBoxName);
-    return box.get(confidentialModeKey, defaultValue: false) as bool;
+    try {
+      final box = _getSettingsBox();
+      return box.get(confidentialModeKey, defaultValue: false) as bool;
+    } catch (e) {
+      debugPrint('Error checking confidential mode: $e');
+      return false;
+    }
   }
 
   static Future<void> setConfidentialModeEnabled(bool enabled) async {
-    final box = Hive.box(settingsBoxName);
-    await box.put(confidentialModeKey, enabled);
+    try {
+      final box = _getSettingsBox();
+      await box.put(confidentialModeKey, enabled);
+    } catch (e) {
+      debugPrint('Error setting confidential mode: $e');
+      rethrow;
+    }
   }
 
   // ---------------- Confidential Password ----------------
   /// Define senha do modo confidencial
-  static void setConfidentialPassword(String plain) {
-    final box = Hive.box(settingsBoxName);
-    final hash = sha256.convert(utf8.encode(plain)).toString();
-    box.put(confidentialPasswordKey, hash);
+  static Future<void> setConfidentialPassword(String plain) async {
+    try {
+      final box = _getSettingsBox();
+      final hash = sha256.convert(utf8.encode(plain)).toString();
+      await box.put(confidentialPasswordKey, hash);
+    } catch (e) {
+      debugPrint('Error setting confidential password: $e');
+      rethrow;
+    }
   }
 
   /// Verifica senha do modo confidencial
   static bool verifyConfidentialPassword(String plain) {
-    final box = Hive.box(settingsBoxName);
-    final saved = box.get(confidentialPasswordKey);
-    if (saved == null) return false;
-    final hash = sha256.convert(utf8.encode(plain)).toString();
-    return saved == hash;
+    try {
+      final box = _getSettingsBox();
+      final saved = box.get(confidentialPasswordKey);
+      if (saved == null) return false;
+      final hash = sha256.convert(utf8.encode(plain)).toString();
+      return saved == hash;
+    } catch (e) {
+      debugPrint('Error verifying confidential password: $e');
+      return false;
+    }
   }
 
   /// Checa se já existe senha do modo confidencial
   static bool hasConfidentialPassword() {
-    final box = Hive.box(settingsBoxName);
-    return box.containsKey(confidentialPasswordKey);
+    try {
+      final box = _getSettingsBox();
+      return box.containsKey(confidentialPasswordKey);
+    } catch (e) {
+      debugPrint('Error checking confidential password: $e');
+      return false;
+    }
   }
 
   // ---------------- CRUD ----------------
   /// Adiciona uma nova senha ao Hive
-  Future<void> addPassword(PasswordModel pwd) async {
+  static Future<void> addPassword(PasswordModel pwd) async {
     try {
-      final box = Hive.box<Map<dynamic, dynamic>>(passwordsBoxName);
+      final box = _getPasswordsBox();
       await box.put(pwd.id, pwd.toMap());
     } catch (e) {
-      debugPrint('Erro ao adicionar senha: $e');
+      debugPrint('Error adding password: $e');
       rethrow;
     }
   }
 
   static Future<void> editPassword(String id, PasswordModel pwd) async {
-    final box = Hive.box(passwordsBoxName);
-    if (box.containsKey(id)) {
-      await box.put(id, pwd.toMap());
+    try {
+      final box = _getPasswordsBox();
+      if (box.containsKey(id)) {
+        await box.put(id, pwd.toMap());
+      } else {
+        throw Exception('Password with id $id not found');
+      }
+    } catch (e) {
+      debugPrint('Error editing password: $e');
+      rethrow;
     }
   }
 
   static Future<void> deletePassword(String id) async {
-    final box = Hive.box(passwordsBoxName);
-    await box.delete(id);
+    try {
+      final box = _getPasswordsBox();
+      if (box.containsKey(id)) {
+        await box.delete(id);
+      } else {
+        throw Exception('Password with id $id not found');
+      }
+    } catch (e) {
+      debugPrint('Error deleting password: $e');
+      rethrow;
+    }
+  }
+
+  static Future<bool> backupPasswords(String backupPath) async {
+    try {
+      final box = _getPasswordsBox();
+      final backupFile = File(backupPath);
+      await backupFile.writeAsString(jsonEncode(box.toMap()));
+      return true;
+    } catch (e) {
+      debugPrint('Error backing up passwords: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> restorePasswords(String backupPath) async {
+    try {
+      final box = _getPasswordsBox();
+      final backupFile = File(backupPath);
+      final data = await backupFile.readAsString();
+      final Map<String, dynamic> passwords = jsonDecode(data);
+
+      await box.clear();
+      await box.putAll(passwords);
+
+      return true;
+    } catch (e) {
+      debugPrint('Error restoring passwords: $e');
+      return false;
+    }
   }
 
   static List<PasswordModel> getAllPasswords({bool includeConfidential = false}) {
-    final box = Hive.box(passwordsBoxName);
-    return box.keys.map((k) => PasswordModel.fromMap(k.toString(), box.get(k))).where((p) {
-      if (p.confidential && !includeConfidential) return false;
-      return true;
-    }).toList();
+    try {
+      final box = _getPasswordsBox();
+      final List<PasswordModel> passwords = [];
+
+      box.toMap().forEach((key, value) {
+        try {
+          final password = PasswordModel.fromMap(key.toString(), value);
+          if (includeConfidential || !password.confidential) {
+            passwords.add(password);
+          }
+        } catch (e) {
+          debugPrint('Error parsing password $key: $e');
+        }
+      });
+
+      return passwords;
+    } catch (e) {
+      debugPrint('Error getting all passwords: $e');
+      return [];
+    }
   }
 
   static List<PasswordModel> getByCategory(String category, {bool includeConfidential = false}) {
@@ -122,12 +220,30 @@ class PasswordService {
   }
 
   static List<PasswordModel> searchPasswords(String query, {bool includeConfidential = false}) {
-    query = query.toLowerCase();
-    return getAllPasswords(includeConfidential: includeConfidential).where((p) =>
-      p.siteName.toLowerCase().contains(query) ||
-      p.username.toLowerCase().contains(query) ||
-      (p.notes?.toLowerCase().contains(query) ?? false)
-    ).toList();
+    try {
+      final box = _getPasswordsBox();
+      final List<PasswordModel> results = [];
+      final queryLower = query.toLowerCase();
+
+      box.toMap().forEach((key, value) {
+        try {
+          final password = PasswordModel.fromMap(key.toString(), value);
+          if ((includeConfidential || !password.confidential) &&
+              (password.siteName.toLowerCase().contains(queryLower) ||
+               password.username.toLowerCase().contains(queryLower) ||
+               (password.notes?.toLowerCase().contains(queryLower) ?? false))) {
+            results.add(password);
+          }
+        } catch (e) {
+          debugPrint('Error searching password $key: $e');
+        }
+      });
+
+      return results;
+    } catch (e) {
+      debugPrint('Error searching passwords: $e');
+      return [];
+    }
   }
 
   // ---------------- Generator & Strength ----------------

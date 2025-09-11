@@ -978,7 +978,7 @@ Future<void> exportBackup(BuildContext context, {required bool isConfidential}) 
                     );
                     
                     if (!exists) {
-                      await passwordService.addPassword(password);
+                      await PasswordService.addPassword(password);
                       addedCount++;
                     }
                     
