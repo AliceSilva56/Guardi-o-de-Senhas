@@ -14,6 +14,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import '../services/settings_service.dart';
+import '../services/biometric_service.dart';
 import '../services/pdf_export_service.dart';
 import '../services/password_service.dart';
 import '../main.dart';
@@ -163,19 +164,50 @@ class SettingsScreen extends StatelessWidget {
           subtitle: const Text('Desbloqueia apenas conteúdo confidencial'),
           onTap: () => _configureConfidentialPassword(context),
         ),
-        ListTile(
-          leading: const Icon(Icons.fingerprint),
-          title: const Text('Autenticação biométrica'),
-          subtitle: const Text('Impressão digital ou reconhecimento facial'),
-          onTap: () async {
-            bool atual = await SettingsService.getBiometryEnabled();
-            await SettingsService.setBiometryEnabled(!atual);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content:
-                      Text('Biometria ${!atual ? "ativada" : "desativada"}')),
+        FutureBuilder<bool>(
+          future: BiometricService.isBiometricAvailable(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const ListTile(
+                leading: CircularProgressIndicator(),
+                title: Text('Verificando biometria...'),
+              );
+            }
+
+            final isAvailable = snapshot.data ?? false;
+            
+            return FutureBuilder<bool>(
+              future: SettingsService.getBiometryEnabled(),
+              builder: (context, enabledSnapshot) {
+                final isEnabled = enabledSnapshot.data ?? false;
+                
+                return SwitchListTile(
+                  title: const Text('Autenticação biométrica'),
+                  subtitle: Text(
+                    isAvailable 
+                      ? 'Usar impressão digital ou reconhecimento facial para login'
+                      : 'Biometria não disponível neste dispositivo',
+                  ),
+                  secondary: const Icon(Icons.fingerprint),
+                  value: isAvailable && isEnabled,
+                  onChanged: isAvailable
+                      ? (value) async {
+                          await SettingsService.setBiometryEnabled(value);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Biometria ${value ? 'ativada' : 'desativada'}.',
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      : null,
+                );
+              },
             );
-          }, // implementar biometria
+          },
         ),
         const Divider(),
 

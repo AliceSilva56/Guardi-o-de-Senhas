@@ -1,5 +1,9 @@
 # 📖 Guardião de Senhas – Roadmap
 
+💙 Últimas Atualizações 15/09/2025
+
+- Biometria aplicada com sucesso.
+
 💙 Últimas Atualizações 11/09/2025
 
 - tive que concertar o salvamento da adição de senhas.
@@ -117,7 +121,7 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 
 - ❤️ Verificar se os arquivos existentes são realmente necessários.
 
-- 💚 Talvez tirar a entrada por Biometria(Pensar melhor sobre a implementação).
+- 💚 Talvez tirar a entrada por Biometria(Pensar melhor sobre a implementação).*
 
 - 💛 Verificar/Concertar o campo de  pergunta no registro flow, está com pouco espaço, Colocar tratativa de erros especifica, para campos vazios e etc.
 

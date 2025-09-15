@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart';
+import 'package:local_auth/local_auth.dart';
 
 class SettingsService {
   static const String _masterPasswordKey = 'master_password'; // TODO: ideal: criptografar
@@ -103,6 +104,37 @@ static Future<bool> verifyMasterPassword(String password) async {
     final dateString = box.get(_accountDeletionKey);
     if (dateString == null) return null;
     return DateTime.parse(dateString);
+  }
+
+  // Configurações de biometria
+  static Future<bool> isBiometricAvailable() async {
+    try {
+      final localAuth = LocalAuthentication();
+      return await localAuth.canCheckBiometrics || await localAuth.isDeviceSupported();
+    } catch (e) {
+      debugPrint('Erro ao verificar disponibilidade de biometria: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> getBiometryEnabled() async {
+    try {
+      final box = await Hive.openBox(settingsBoxName);
+      return box.get(biometryKey, defaultValue: false);
+    } catch (e) {
+      debugPrint('Erro ao verificar biometria habilitada: $e');
+      return false;
+    }
+  }
+
+  static Future<void> setBiometryEnabled(bool enabled) async {
+    try {
+      final box = await Hive.openBox(settingsBoxName);
+      await box.put(biometryKey, enabled);
+    } catch (e) {
+      debugPrint('Erro ao alterar status da biometria: $e');
+      rethrow;
+    }
   }
 
   // Verifica se a conta deve ser excluída e executa a limpeza se necessário
@@ -335,16 +367,8 @@ static Future<bool> verifyMasterPassword(String password) async {
   // -----------------------------
   // BIOMETRIA
   // -----------------------------
-
-  static Future<bool> getBiometryEnabled() async {
-    final box = await Hive.openBox(settingsBoxName);
-    return box.get(biometryKey, defaultValue: false) as bool;
-  }
-
-  static Future<void> setBiometryEnabled(bool enabled) async {
-    final box = await Hive.openBox(settingsBoxName);
-    await box.put(biometryKey, enabled);
-  }
+  // Os métodos getBiometryEnabled e setBiometryEnabled já estão definidos acima
+  // com tratamento de erros adequado
 
   // Salva o status do backup
   static Future<void> setBackupStatus({required bool done, required String location}) async {

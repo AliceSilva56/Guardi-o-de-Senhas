@@ -5,8 +5,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import '../services/settings_service.dart';
+import '../services/biometric_service.dart';
 import '../theme/app_colors.dart';
 import 'main_screen.dart';
+import 'package:flutter/services.dart';
 
 
 final _settings = SettingsService();
@@ -287,108 +289,165 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     ));
   }
 
-// TELA 5 - Biometria
-Widget _biometria() {
-  final nome = nomeCtrl.text.trim();
-  final saudacao = nome.isEmpty ? "" : ", $nome";
-  return _wrapMagic(Column(
-    children: [
-      Image.asset(
-        "assets/animation/guardiao_biometria_transparente.png",
-        height: 120,
-      ),
-      const SizedBox(height: 16),
-      _title("Deseja usar biometria para acesso rápido$saudacao?"),
-      const Text(
-        "Vejo que sua magia é poderosa. Deseja usar sua própria marca (biometria) para acessar seu cofre mais rápido?",
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: 8),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.buttonSecondary,
-                foregroundColor: AppColors.buttonText,
-              ),
-              onPressed: () {
-                biometriaEscolha = false;
-                nextPage();
-              },
-              child: const Text("Não agora"),
+  // TELA 5 - Biometria
+  Widget _biometria() {
+    return FutureBuilder<bool>(
+      future: BiometricService.isBiometricAvailable(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _wrapMagic(const Center(child: CircularProgressIndicator()));
+        }
+
+        final isAvailable = snapshot.data ?? false;
+        
+        return _wrapMagic(Column(
+          children: [
+            Image.asset(
+              "assets/animation/guardiao_biometria_transparente.png",
+              height: 120,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: ElevatedButton(
+            const SizedBox(height: 12),
+            _title(isAvailable 
+              ? "Deseja ativar a biometria?" 
+              : "Biometria não disponível"),
+            
+            if (isAvailable) ...[
+              const Text(
+                "Você pode usar sua impressão digital ou reconhecimento facial para fazer login mais rapidamente.",
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SwitchListTile(
+                title: const Text("Ativar biometria"),
+                value: biometriaEscolha,
+                onChanged: (value) async {
+                  if (value) {
+                    try {
+                      final authenticated = await BiometricService.authenticate();
+                      if (authenticated) {
+                        setState(() {
+                          biometriaEscolha = value;
+                        });
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Autenticação biométrica necessária para ativar.'),
+                            ),
+                          );
+                        }
+                      }
+                    } on PlatformException catch (e) {
+                      debugPrint('Erro na autenticação biométrica: ${e.message}');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erro na biometria: ${e.message ?? 'Tente novamente mais tarde'}')
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      debugPrint('Erro inesperado: $e');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Erro ao configurar biometria. Tente novamente.')
+                          ),
+                        );
+                      }
+                    }
+                  } else {
+                    setState(() {
+                      biometriaEscolha = value;
+                    });
+                  }
+                },
+              ),
+            ] else ...[
+              const Text(
+                "Seu dispositivo não possui recursos biométricos configurados ou não são compatíveis.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+              const SizedBox(height: 24),
+            ],
+            
+            const Spacer(),
+            ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.buttonPrimary,
                 foregroundColor: AppColors.buttonText,
               ),
-              onPressed: () {
-                biometriaEscolha = true;
-                // TODO: Implementar autenticação biométrica aqui
-                nextPage();
-              },
-              child: const Text("Sim, eu quero"),
+              onPressed: nextPage,
+              child: const Text("Continuar"),
             ),
-          ),
-        ],
-      ),
-    ],
-  ));
-}
+          ],
+        ));
+      },
+    );
+  }
 
 
-// TELA 6 - Final
-Widget _finalizacao() {
-  final nome = nomeCtrl.text.trim();
-  return _wrapMagic(Column(
-    children: [
-      Image.asset(
-        "assets/animation/guardiao_final_transparente.png",
-        height: 150,
-      ),
-      const SizedBox(height: 16),
-      _title(
-          "Perfeito${nome.isEmpty ? "!" : ", $nome!"} Agora você está pronto."),
-      const Text(
-        "Suas senhas estão seguras sob minha proteção. Vamos juntos nesta jornada!",
-        textAlign: TextAlign.center,
-      ),
-      const SizedBox(height: 24),
-      ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.buttonPrimary,
-          foregroundColor: AppColors.buttonText,
+  // TELA 6 - Finalização
+  Widget _finalizacao() {
+    final nome = nomeCtrl.text.trim();
+    return _wrapMagic(Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Image.asset(
+          "assets/animation/guardiao_final_transparente.png",
+          height: 150,
         ),
-        onPressed: () async {
-          // 🔹 Persistir dados no SettingsService
-          await _settings.setLoginPassword(senhaCtrl.text.trim());
-          await SettingsService.setMasterPassword(senhaCtrl.text.trim()); // redundante mas garante  
-          await SettingsService.setProfile(
-            avatarPath: "",
-            name: nome,
-            email: "",
-          );
-          await SettingsService.setBiometryEnabled(biometriaEscolha);
-
-          // ⚡ TODO: salvar pergunta/resposta de segurança também
-          final box = await Hive.openBox(SettingsService.settingsBoxName);
-          await box.put("security_question", pergunta);
-          await box.put("security_answer", respostaCtrl.text.trim());
-
-          // Navega para a tela principal já chamando pelo nome informado
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => MainScreen(userName: nome),
-            ),
-          );
-        },
-        child: const Text("Entrar no Cofre"),
+        const SizedBox(height: 24),
+        _title("Tudo pronto!"),
+        Text(
+          "Parabéns, ${nome.isNotEmpty ? nome : 'Guardião'}! Sua conta foi criada com sucesso.",
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        if (biometriaEscolha) ...[
+          const Icon(Icons.fingerprint, size: 48, color: Colors.green),
+          const Text(
+            "Biometria ativada com sucesso!",
+            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+        ],
+        const Spacer(),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.buttonPrimary,
+            foregroundColor: AppColors.buttonText,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          ),
+          onPressed: () async {
+            // Salvar senha mestra
+            await SettingsService.setMasterPasswordStatic(senhaCtrl.text.trim());
+            
+            // Salvar perfil
+            await SettingsService.setProfile(
+              avatarPath: "",
+              name: nome,
+              email: "",
+            );
+            
+            // Salvar pergunta de segurança
+            final box = await Hive.openBox(SettingsService.settingsBoxName);
+            await box.put("security_question", pergunta);
+            await box.put("security_answer", respostaCtrl.text.trim());
+            
+            // Salvar preferência de biometria
+            if (biometriaEscolha) {
+              await SettingsService.setBiometryEnabled(true);
+            }
+            
+            // Navegar para tela principal
+            if (!mounted) return;
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+            );
+          },
+          child: const Text("Acessar Meu Cofre"),
         ),
       ],
     ));

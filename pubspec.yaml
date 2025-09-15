@@ -19,6 +19,8 @@ dependencies:
   intl: ^0.18.1
   provider: ^6.1.5
   local_auth: ^2.1.4
+  local_auth_android: ^1.0.0
+  local_auth_ios: ^1.1.7
   crypto: ^3.0.6
   printing: ^5.11.1
   path_provider_windows: ^2.2.1
