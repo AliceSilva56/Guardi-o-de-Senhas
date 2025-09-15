@@ -6,6 +6,7 @@ import 'package:flutter/material.dart'; // Importa o pacote Flutter
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart'; // Importa o pacote Provider
+import 'screens/initial_screen.dart'; // Tela inicial que decide qual tela mostrar
 import 'screens/elf_intro_screen.dart'; // Importa a tela de introdução do elfo
 import 'screens/login_screen.dart'; // Importa a tela de login
 import 'screens/register_screen.dart'; // Importa a tela de registro
@@ -34,6 +35,10 @@ void main() async {
   
   if (!Hive.isBoxOpen('profile')) {
     await Hive.openBox('profile');
+  }
+  
+  if (!Hive.isBoxOpen('user_preferences')) {
+    await Hive.openBox('user_preferences');
   }
   
   // Check for pending account deletion
@@ -128,7 +133,7 @@ class MyApp extends StatelessWidget {
           darkTheme: ThemeData.dark(),
           debugShowCheckedModeBanner: false,
           // Primeira tela exibida
-          initialRoute: '/elf_intro',
+          home: const InitialScreen(),
           routes: {
             '/elf_intro': (context) => const ElfIntroScreen(),
             '/login': (context) => const LoginScreen(),

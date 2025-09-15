@@ -4,6 +4,7 @@
 // Ela apresenta uma imagem de um elfo (ou mascote do aplicativo) e dois botões:
 // um para login e outro para registro.
 import 'package:flutter/material.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import 'login_screen.dart';
 //import 'register_screen.dart';
@@ -47,13 +48,20 @@ class ElfIntroScreen extends StatelessWidget {
                   foregroundColor: Colors.white, // Texto branco
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
+                onPressed: () async {
+                  // Marca que o usuário viu a introdução
+                  await UserService.setHasSeenIntro();
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    );
+                  }
                 },
-                child: const Text("Sim, já tenho login"),
+                child: const Text(
+                  "Sim, tenho login",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 15),
               ElevatedButton(
@@ -65,13 +73,21 @@ class ElfIntroScreen extends StatelessWidget {
                   
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 ),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegistroGuardiaoFlow()),
-                  );
+                onPressed: () async {
+                  // Marca que o usuário viu a introdução
+                  await UserService.setHasSeenIntro();
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const RegistroGuardiaoFlow()),
+                    );
+                  }
                 },
-                child: const Text("Não, quero me registrar"),
+                child: const Text(
+                  "Não, quero me cadastrar",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),

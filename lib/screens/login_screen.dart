@@ -5,6 +5,7 @@ import 'register_screen.dart';
 import '../theme/app_colors.dart';
 import '../services/settings_service.dart';
 import '../services/biometric_service.dart';
+import '../services/user_service.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 
@@ -20,11 +21,26 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true; // controla se a senha está visível ou não
   bool _isBiometricAvailable = false;
   bool _isLoading = true;
+  String _welcomeMessage = 'Bem-vindo(a) ao Guardião de Senhas!';
+  String _userName = '';
 
   @override
   void initState() {
     super.initState();
     _checkBiometricAvailability();
+    _loadWelcomeMessage();
+  }
+
+  Future<void> _loadWelcomeMessage() async {
+    final message = await UserService.getWelcomeMessage();
+    final userName = await UserService.getUserName();
+    
+    if (mounted) {
+      setState(() {
+        _welcomeMessage = message;
+        _userName = userName ?? '';
+      });
+    }
   }
 
   Future<void> _checkBiometricAvailability() async {
@@ -81,6 +97,13 @@ class _LoginScreenState extends State<LoginScreen> {
     final ok = await SettingsService.verifyMasterPassword(input);
     
     if (ok || input == "1234") {
+      // Atualiza o último login e verifica se é o primeiro acesso
+      await UserService.updateLastLogin();
+      final isFirstLogin = await UserService.isFirstLogin();
+      
+      if (isFirstLogin) {
+        await UserService.setFirstLoginDone();
+      }
       // Verifica se há uma exclusão pendente
       final deletionDate = await SettingsService.getPendingDeletionDate();
       if (deletionDate != null) {
@@ -149,100 +172,108 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     }
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
-    final backgroundColor =
-        isDark ? AppColors.darkBackground : AppColors.lightBackground;
-    final inputFillColor =
-        isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground;
+
+    final theme = Theme.of(context);
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
+    final secondaryTextColor = theme.textTheme.bodyMedium?.color ?? Colors.grey;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.brightness == Brightness.dark 
+          ? AppColors.backgroundDark 
+          : AppColors.backgroundLight,
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 40),
+            // Logo e título
+            Column(
               children: [
+                Image.asset(
+                  'assets/logo/guardiao.png',
+                  height: 120,
+                  width: 120,
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  '🛡️ Guardião de Senhas',
-                  style: TextStyle(
-                    fontFamily: 'Orbitron',
-                    fontSize: 28,
+                  'Guardião de Senhas',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: AppColors.primary,
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _welcomeMessage,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     color: textColor,
+                    height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 40),
-
-                TextField(
-                  controller: masterPasswordController,
-                  obscureText: _obscurePassword,
-                  autofocus: true,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) async {
-                    await _handleLogin();
-                  },
-                  style: TextStyle(color: textColor),
-                  decoration: InputDecoration(
-                    labelText: 'Senha Mestra',
-                    labelStyle: TextStyle(color: secondaryTextColor),
-                    filled: true,
-                    fillColor: inputFillColor,
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: secondaryTextColor,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Linha com Entrar e Cadastrar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _handleLogin,
-                      child: const Text('Entrar'),
-                    ),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: textColor,
-                        side: BorderSide(color: AppColors.primary),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const RegisterScreen()),
-                        );
-                      },
-                      child: const Text('Cadastrar'),
-                    ),
-                  ],
-                ),
-
-                if (_isBiometricAvailable) ..._buildBiometricSection(),
+                const SizedBox(height: 24),
               ],
             ),
-          ),
+            
+            // Campo de senha
+            TextField(
+              controller: masterPasswordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Senha Mestra',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: secondaryTextColor,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
+              onSubmitted: (_) => _handleLogin(),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Botão de Entrar
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              onPressed: _handleLogin,
+              child: const Text('Entrar'),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Botão de Cadastrar
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: textColor,
+                side: BorderSide(color: AppColors.primary),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RegisterScreen(),
+                  ),
+                );
+              },
+              child: const Text('Cadastrar'),
+            ),
+
+            if (_isBiometricAvailable) ..._buildBiometricSection(),
+          ],
         ),
       ),
     );

@@ -4,6 +4,8 @@
 
 - Biometria aplicada com sucesso.
 
+- Após o primeiro contato do usário ao aplicativo o App vai para tela de login.
+
 💙 Últimas Atualizações 11/09/2025
 
 - tive que concertar o salvamento da adição de senhas.
@@ -121,12 +123,7 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 
 - ❤️ Verificar se os arquivos existentes são realmente necessários.
 
-- 💚 Talvez tirar a entrada por Biometria(Pensar melhor sobre a implementação).*
-
 - 💛 Verificar/Concertar o campo de  pergunta no registro flow, está com pouco espaço, Colocar tratativa de erros especifica, para campos vazios e etc.
-
-- ❤️ Após o primeiro contato do usário ao aplicativo deve ir para tela de login, acredito que vamos fazer ela receber o usuário com boas-vindas de voltas e mas algo com mais personalização.
-
 
 ---
 
@@ -134,7 +131,7 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 
 1. Desenvolver tela de apresentação inicial. (Já desenvolvida)
 
-2. Melhorar a tela de registro por etapas: ( Em desenvolvimento)
+2. Melhorar a tela de registro por etapas: ( Já desenvolvida mas melhorar)
 
 Adicionar animações (intro + registro).
 
