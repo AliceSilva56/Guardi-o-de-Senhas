@@ -20,13 +20,34 @@ class RegistroGuardiaoFlow extends StatefulWidget {
 }
 
 class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
+
+  // --- Controllers ---
+final TextEditingController respostaCtrl = TextEditingController();
+final TextEditingController novaPerguntaCtrl = TextEditingController();
+
+// --- Variáveis de estado ---
+bool perguntaErro = false;
+bool respostaErro = false;
+bool novaPerguntaErro = false;
+
+String pergunta = ""; // Guarda a pergunta escolhida ou personalizada
+
+// --- Função de validação ---
+bool _validarCampos() {
+  setState(() {
+    perguntaErro = pergunta.isEmpty && novaPerguntaCtrl.text.trim().isEmpty;
+    novaPerguntaErro = pergunta.isEmpty && novaPerguntaCtrl.text.trim().isEmpty;
+    respostaErro = respostaCtrl.text.trim().isEmpty;
+  });
+
+  return !(perguntaErro || respostaErro || novaPerguntaErro);
+}
+
   final PageController _controller = PageController();
   int pageIndex = 0;
 
   final nomeCtrl = TextEditingController();
   final senhaCtrl = TextEditingController();
-  String pergunta = "";
-  final respostaCtrl = TextEditingController();
   bool biometriaEscolha = false;
   bool _obscurePassword = true;
 
@@ -227,67 +248,123 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     ));
   }
 
-  // TELA 4 - Pergunta de segurança
-  Widget _pergunta() {
-    final nome = nomeCtrl.text.trim();
-    final saudacao = nome.isEmpty ? "" : ", $nome";
-    return _wrapMagic(Column(
+// TELA 4 - Pergunta de segurança
+Widget _pergunta() {
+  final nome = nomeCtrl.text.trim();
+  final saudacao = nome.isEmpty ? "" : ", $nome";
+
+  return _wrapMagic(
+    Column(
       children: [
         Image.asset(
           "assets/animation/guardiao_PerguntaSeguranca_transparente.png",
           height: 120,
         ),
         const SizedBox(height: 12),
+
         _title("Escolha uma pergunta de segurança$saudacao"),
         const Text(
-          "Mesmos os guardiões precisam de um truque extra. Escolha uma pergunta que só você saiba a resposta.",
+          "Mesmo os guardiões precisam de um truque extra. Escolha ou crie uma pergunta que só você saiba a resposta.",
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 12),
+
+        // Dropdown com perguntas padrão
         DropdownButtonFormField<String>(
           value: pergunta.isEmpty ? null : pergunta,
           items: const [
             DropdownMenuItem(
-                value: "pet",
-                child: Text("Qual foi o nome do seu primeiro pet?")),
+              value: "pet",
+              child: Text("Qual foi o nome do seu primeiro pet?"),
+            ),
             DropdownMenuItem(
-                value: "cidade", child: Text("Em que cidade você nasceu?")),
+              value: "cidade",
+              child: Text("Em que cidade você nasceu?"),
+            ),
             DropdownMenuItem(
-                value: "prof",
-                child: Text("Qual era o nome do seu professor favorito?")),
+              value: "prof",
+              child: Text("Qual era o nome do seu professor favorito?"),
+            ),
           ],
-          onChanged: (v) => setState(() => pergunta = v ?? ""),
+          onChanged: (v) => setState(() {
+            pergunta = v ?? "";
+            perguntaErro = false;
+          }),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white12,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            errorText: perguntaErro ? "Escolha ou crie uma pergunta" : null,
           ),
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: respostaCtrl,
-          textInputAction: TextInputAction.done, // <- adicionado
-  onSubmitted: (_) { // <- adicionado
-    if (pergunta.isEmpty || respostaCtrl.text.trim().isEmpty) return;
-    nextPage();
-  },
-   autofocus: true, // 🔹 Alteração: já inicia com foco neste campo
-          decoration: const InputDecoration(hintText: "Resposta"),
+
+        const SizedBox(height: 16),
+
+        // Campo para criar pergunta personalizada
+        TextFormField(
+          controller: novaPerguntaCtrl,
+          maxLines: 2,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            labelText: "Criar nova pergunta",
+            labelStyle: const TextStyle(color: Colors.white70),
+            filled: true,
+            fillColor: Colors.white12,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            errorText: novaPerguntaErro ? "Digite uma pergunta" : null,
+          ),
+          onChanged: (_) {
+            setState(() {
+              novaPerguntaErro = false;
+            });
+          },
         ),
+
+        const SizedBox(height: 16),
+
+        // Campo de resposta
+        TextFormField(
+          controller: respostaCtrl,
+          maxLines: 2,
+          textInputAction: TextInputAction.done,
+          style: const TextStyle(color: Colors.white),
+          onFieldSubmitted: (_) {
+            if (_validarCampos()) nextPage();
+          },
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: "Resposta",
+            filled: true,
+            fillColor: Colors.white12,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            errorText: respostaErro ? "Digite uma resposta" : null,
+          ),
+        ),
+
         const SizedBox(height: 20),
+
+        // Botão próximo
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.buttonPrimary,
             foregroundColor: AppColors.buttonText,
           ),
           onPressed: () {
-            if (pergunta.isEmpty || respostaCtrl.text.trim().isEmpty) return;
-            nextPage();
+            if (_validarCampos()) {
+              // Se o usuário digitou pergunta personalizada, ela substitui a default
+              if (novaPerguntaCtrl.text.trim().isNotEmpty) {
+                pergunta = novaPerguntaCtrl.text.trim();
+              }
+              nextPage();
+            }
           },
           child: const Text("Próximo"),
         ),
       ],
-    ));
-  }
+    ),
+  );
+}
+
 
   // TELA 5 - Biometria
   Widget _biometria() {

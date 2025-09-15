@@ -2,6 +2,8 @@
 
 💙 Últimas Atualizações 15/09/2025
 
+- Verificar/Concertar o campo de  pergunta no registro flow, está com pouco espaço, Colocar tratativa de erros especifica, para campos vazios e etc. (Melhorar)
+
 - Biometria aplicada com sucesso.
 
 - Após o primeiro contato do usário ao aplicativo o App vai para tela de login.
@@ -122,8 +124,6 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 - Acredito que seja viavél criar uma pasta para os arquivos de backup.
 
 - ❤️ Verificar se os arquivos existentes são realmente necessários.
-
-- 💛 Verificar/Concertar o campo de  pergunta no registro flow, está com pouco espaço, Colocar tratativa de erros especifica, para campos vazios e etc.
 
 ---
 
