@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/password_model.dart';
 import '../services/password_service.dart';
 import '../services/settings_service.dart';
+import '../services/biometric_service.dart';
 import 'category_screen.dart';
 import 'confidencial_screen.dart';
 import 'settings_screen.dart';
@@ -58,27 +59,127 @@ class _MainScreenState extends State<MainScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black;
     final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    bool isAuthenticating = false;
 
-// Diálogo para pedir a senha mestra
+    // Verifica se a biometria está disponível e habilitada
+    final bool canUseBiometrics = await BiometricService.isBiometricAvailable() && 
+                                 await BiometricService.isBiometricEnabled();
+
+    // Função para tentar autenticação biométrica
+    Future<bool> tryBiometricAuth() async {
+      try {
+        setState(() => isAuthenticating = true);
+        final authenticated = await BiometricService.authenticate();
+        if (authenticated) {
+          if (context.mounted) {
+            Navigator.of(context).pop(true);
+          }
+          return true;
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Autenticação biométrica falhou'),
+                backgroundColor: Colors.orange[800],
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return false;
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Erro na autenticação biométrica'),
+              backgroundColor: Colors.red[800],
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return false;
+      } finally {
+        if (context.mounted) {
+          setState(() => isAuthenticating = false);
+        }
+      }
+    }
+
+    // Se a biometria estiver disponível, tenta autenticar primeiro
+    if (canUseBiometrics && !isAuthenticating) {
+      return await tryBiometricAuth();
+    }
+
+    // Diálogo para pedir a senha mestra
     final res = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: isDark ? AppColors.darkAppBar : AppColors.lightAppBar,
-        title: Text('Verificar Senha Mestra', style: TextStyle(color: textColor)),
-        content: TextField(
-          controller: controller,
-          obscureText: true,
-          style: TextStyle(color: textColor),
-          decoration: InputDecoration(
-            labelText: 'Senha Mestra',
-            labelStyle: TextStyle(color: secondaryTextColor),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+        title: Text('Verificar Acesso', style: TextStyle(color: textColor)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Digite sua senha mestra ou use biometria', 
+                 style: TextStyle(color: secondaryTextColor, fontSize: 14)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              style: TextStyle(color: textColor),
+              decoration: InputDecoration(
+                labelText: 'Senha Mestra',
+                labelStyle: TextStyle(color: secondaryTextColor),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.inputBorder),
+                ),
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppColors.inputBorder),
-            ),
-          ),
+            if (canUseBiometrics) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Text('OU', textAlign: TextAlign.center, 
+                   style: TextStyle(color: secondaryTextColor)),
+              const SizedBox(height: 8),
+              StatefulBuilder(
+                builder: (context, setState) {
+                  return ElevatedButton.icon(
+                    onPressed: isAuthenticating 
+                        ? null 
+                        : () async {
+                            setState(() => isAuthenticating = true);
+                            final result = await tryBiometricAuth();
+                            if (!result) {
+                              setState(() => isAuthenticating = false);
+                            }
+                          },
+                    icon: isAuthenticating 
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.fingerprint),
+                    label: Text(
+                      isAuthenticating ? 'Autenticando...' : 'Usar Biometria',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(

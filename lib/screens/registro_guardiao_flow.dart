@@ -20,27 +20,31 @@ class RegistroGuardiaoFlow extends StatefulWidget {
 }
 
 class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
-
   // --- Controllers ---
-final TextEditingController respostaCtrl = TextEditingController();
-final TextEditingController novaPerguntaCtrl = TextEditingController();
+  final TextEditingController respostaCtrl = TextEditingController();
+  final TextEditingController novaPerguntaCtrl = TextEditingController();
 
-// --- Variáveis de estado ---
-bool perguntaErro = false;
-bool respostaErro = false;
-bool novaPerguntaErro = false;
-
-String pergunta = ""; // Guarda a pergunta escolhida ou personalizada
+  // --- Variáveis de estado ---
+  bool perguntaErro = false;
+  bool respostaErro = false;
+  bool isEditandoPergunta = false; // Controla se está editando uma pergunta personalizada
+  String pergunta = ""; // Guarda a pergunta escolhida ou personalizada
+  
+  // Lista de perguntas padrão
+  final List<Map<String, String>> perguntasPadrao = [
+    {"id": "pet", "texto": "Qual foi o nome do seu primeiro pet?"},
+    {"id": "cidade", "texto": "Em que cidade você nasceu?"},
+    {"id": "prof", "texto": "Qual era o nome do seu professor favorito?"},
+  ];
 
 // --- Função de validação ---
 bool _validarCampos() {
   setState(() {
-    perguntaErro = pergunta.isEmpty && novaPerguntaCtrl.text.trim().isEmpty;
-    novaPerguntaErro = pergunta.isEmpty && novaPerguntaCtrl.text.trim().isEmpty;
+    perguntaErro = pergunta.isEmpty || (isEditandoPergunta && novaPerguntaCtrl.text.trim().isEmpty);
     respostaErro = respostaCtrl.text.trim().isEmpty;
   });
 
-  return !(perguntaErro || respostaErro || novaPerguntaErro);
+  return !(perguntaErro || respostaErro);
 }
 
   final PageController _controller = PageController();
@@ -269,56 +273,85 @@ Widget _pergunta() {
         ),
         const SizedBox(height: 12),
 
-        // Dropdown com perguntas padrão
-        DropdownButtonFormField<String>(
-          value: pergunta.isEmpty ? null : pergunta,
-          items: const [
-            DropdownMenuItem(
-              value: "pet",
-              child: Text("Qual foi o nome do seu primeiro pet?"),
-            ),
-            DropdownMenuItem(
-              value: "cidade",
-              child: Text("Em que cidade você nasceu?"),
-            ),
-            DropdownMenuItem(
-              value: "prof",
-              child: Text("Qual era o nome do seu professor favorito?"),
-            ),
-          ],
-          onChanged: (v) => setState(() {
-            pergunta = v ?? "";
-            perguntaErro = false;
-          }),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white12,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-            errorText: perguntaErro ? "Escolha ou crie uma pergunta" : null,
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Campo para criar pergunta personalizada
-        TextFormField(
-          controller: novaPerguntaCtrl,
-          maxLines: 2,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: "Criar nova pergunta",
-            labelStyle: const TextStyle(color: Colors.white70),
-            filled: true,
-            fillColor: Colors.white12,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-            errorText: novaPerguntaErro ? "Digite uma pergunta" : null,
-          ),
-          onChanged: (_) {
-            setState(() {
-              novaPerguntaErro = false;
-            });
-          },
-        ),
+        // Widget condicional: mostra dropdown ou campo de texto
+        isEditandoPergunta
+            ? TextFormField(
+                controller: novaPerguntaCtrl,
+                autofocus: true,
+                maxLines: 2,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: "Sua pergunta personalizada",
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white12,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () {
+                      setState(() {
+                        isEditandoPergunta = false;
+                        pergunta = '';
+                        novaPerguntaCtrl.clear();
+                        perguntaErro = false;
+                      });
+                    },
+                  ),
+                  errorText: perguntaErro ? "Digite uma pergunta" : null,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    pergunta = value;
+                    perguntaErro = false;
+                  });
+                },
+              )
+            : DropdownButtonFormField<String>(
+                value: pergunta.isEmpty ? null : pergunta,
+                items: [
+                  ...perguntasPadrao
+                      .map((perg) => DropdownMenuItem(
+                            value: perg['id'],
+                            child: Text(perg['texto']!),
+                          ))
+                      .toList(),
+                  const DropdownMenuItem(
+                    value: "personalizar",
+                    child: Row(
+                      children: [
+                        Icon(Icons.add_circle_outline, size: 20),
+                        SizedBox(width: 8),
+                        Text("Personalizar pergunta"),
+                      ],
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    if (value == "personalizar") {
+                      isEditandoPergunta = true;
+                      pergunta = '';
+                    } else {
+                      pergunta = value ?? '';
+                      // Se for uma pergunta padrão, limpa o campo de pergunta personalizada
+                      if (pergunta.isNotEmpty) {
+                        novaPerguntaCtrl.clear();
+                      }
+                    }
+                    perguntaErro = false;
+                  });
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white12,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  errorText: perguntaErro ? "Escolha ou crie uma pergunta" : null,
+                ),
+              ),
 
         const SizedBox(height: 16),
 
@@ -351,8 +384,8 @@ Widget _pergunta() {
           ),
           onPressed: () {
             if (_validarCampos()) {
-              // Se o usuário digitou pergunta personalizada, ela substitui a default
-              if (novaPerguntaCtrl.text.trim().isNotEmpty) {
+              // Se estiver editando uma pergunta personalizada, usa o texto digitado
+              if (isEditandoPergunta) {
                 pergunta = novaPerguntaCtrl.text.trim();
               }
               nextPage();

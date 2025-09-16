@@ -211,8 +211,15 @@ static Future<bool> verifyMasterPassword(String password) async {
       final directory = await getApplicationDocumentsDirectory();
       final backupDir = Directory('${directory.path}/$_backupFolder');
       
+      debugPrint('Caminho do diretório de documentos: ${directory.path}');
+      debugPrint('Caminho do diretório de backup: ${backupDir.path}');
+      
       if (!await backupDir.exists()) {
+        debugPrint('Diretório de backup não existe. Criando...');
         await backupDir.create(recursive: true);
+        debugPrint('Diretório de backup criado com sucesso!');
+      } else {
+        debugPrint('Diretório de backup já existe.');
       }
 
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
@@ -303,7 +310,10 @@ static Future<bool> verifyMasterPassword(String password) async {
       final directory = await getApplicationDocumentsDirectory();
       final backupDir = Directory('${directory.path}/$_backupFolder');
       
+      debugPrint('Procurando backups em: ${backupDir.path}');
+      
       if (!await backupDir.exists()) {
+        debugPrint('Diretório de backup não encontrado.');
         return [];
       }
       
@@ -311,10 +321,10 @@ static Future<bool> verifyMasterPassword(String password) async {
         file.path.endsWith(_backupExtension)
       ).toList();
       
+      debugPrint('${files.length} arquivos de backup encontrados.');
+      
       // Ordenar por data de modificação (mais recente primeiro)
-      files.sort((a, b) => 
-        b.statSync().modified.compareTo(a.statSync().modified)
-      );
+      files.sort((a, b) => File(b.path).lastModifiedSync().compareTo(File(a.path).lastModifiedSync()));
       
       return files;
     } catch (e) {

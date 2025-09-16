@@ -1,5 +1,13 @@
 # 📖 Guardião de Senhas – Roadmap
 
+💙 Últimas Atualizações 16/09/2025
+
+- Verificação se os arquivos existentes são realmente necessários.
+
+- Configuração da pasta para os arquivos de backup.
+
+- Implementação da biometria no modo confidencial.
+
 💙 Últimas Atualizações 15/09/2025
 
 - Verificar/Concertar o campo de  pergunta no registro flow, está com pouco espaço, Colocar tratativa de erros especifica, para campos vazios e etc. (Melhorar)
@@ -121,10 +129,6 @@ Concertei o erro das senhas confidenciais esta mostrando no modo normal e vice e
 
 # Próximas Etapas (❤️) Importante, (💛) Necessária e (💚) Opcional
 
-- Acredito que seja viavél criar uma pasta para os arquivos de backup.
-
-- ❤️ Verificar se os arquivos existentes são realmente necessários.
-
 ---
 
 💛 (EM DESENVOLVIMENTO) 🎬 Fluxo de Apresentação & Registro
@@ -141,17 +145,9 @@ Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 ❤️ (EM DESENVOLVIMENTO) 🛡️ Main Screen
 
-- 3.1 Configurações
-
 - Adicionar funcionalidades:
-
-- Perfil
-
-- Biometria (impressão digital).
 
 - Perguntas de segurança.
 
 - Backup
-
-- Opção para trocar a imagem do background dinamicamente.
 
