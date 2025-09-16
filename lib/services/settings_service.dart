@@ -98,6 +98,42 @@ static Future<bool> verifyMasterPassword(String password) async {
     await box.delete(_accountDeletionKey);
   }
 
+  // Pergunta de Segurança
+  static const String _securityQuestionKey = 'security_question';
+  static const String _securityAnswerKey = 'security_answer';
+
+  // Salvar pergunta de segurança
+  static Future<void> setSecurityQuestion(String question, String answer) async {
+    final box = await Hive.openBox(_settingsBox);
+    await box.put(_securityQuestionKey, question);
+    await box.put(_securityAnswerKey, answer);
+  }
+
+  // Obter pergunta de segurança
+  static Future<Map<String, String>?> getSecurityQuestion() async {
+    final box = await Hive.openBox(_settingsBox);
+    final question = box.get(_securityQuestionKey);
+    if (question == null) return null;
+    
+    return {
+      'question': question,
+      'answer': box.get(_securityAnswerKey, defaultValue: '') as String,
+    };
+  }
+
+  // Verificar resposta da pergunta de segurança
+  static Future<bool> verifySecurityAnswer(String answer) async {
+    final box = await Hive.openBox(_settingsBox);
+    final savedAnswer = box.get(_securityAnswerKey);
+    return savedAnswer != null && savedAnswer == answer;
+  }
+
+  // Verificar se existe pergunta de segurança definida
+  static Future<bool> hasSecurityQuestion() async {
+    final box = await Hive.openBox(_settingsBox);
+    return box.containsKey(_securityQuestionKey);
+  }
+
   // Verifica se há uma exclusão de conta pendente
   static Future<DateTime?> getPendingDeletionDate() async {
     final box = await Hive.openBox(_settingsBox);

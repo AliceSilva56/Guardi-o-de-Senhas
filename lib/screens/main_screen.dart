@@ -184,7 +184,7 @@ class _MainScreenState extends State<MainScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancelar', style: TextStyle(color: textColor)),
+            child: Text('Cancelar', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -226,7 +226,10 @@ class _MainScreenState extends State<MainScreen> {
         title: Text('Excluir', style: TextStyle(color: textColor)),
         content: Text('Confirma exclusão?', style: TextStyle(color: secondaryTextColor)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: textColor))),
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: Text('Cancelar', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.buttonPrimary,
@@ -459,7 +462,10 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancelar', style: TextStyle(color: textColor))),
+            TextButton(
+              onPressed: () => Navigator.pop(context), 
+              child: Text('Cancelar', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+            ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonPrimary, foregroundColor: AppColors.buttonText),
               onPressed: () async {
@@ -611,8 +617,8 @@ actions: [
           ),
           actions: [
             TextButton(
-              child: Text('Cancelar', style: TextStyle(color: titleColor)),
               onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar', style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(

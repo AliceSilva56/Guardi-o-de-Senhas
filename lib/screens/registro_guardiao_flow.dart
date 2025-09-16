@@ -55,7 +55,16 @@ bool _validarCampos() {
   bool biometriaEscolha = false;
   bool _obscurePassword = true;
 
-  void nextPage() {
+  void nextPage() async {
+    if (pageIndex == 3) { // Se estiver na tela de pergunta de segurança
+      if (pergunta.isNotEmpty && respostaCtrl.text.isNotEmpty) {
+        await SettingsService.setSecurityQuestion(
+          pergunta, 
+          respostaCtrl.text.trim()
+        );
+      }
+    }
+    
     if (pageIndex < 5) {
       setState(() => pageIndex++);
       _controller.nextPage(

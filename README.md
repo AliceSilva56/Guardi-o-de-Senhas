@@ -2,6 +2,8 @@
 
 💙 Últimas Atualizações 16/09/2025
 
+- Configuração e implemntação da Perguntas de segurança.
+
 - Verificação se os arquivos existentes são realmente necessários.
 
 - Configuração da pasta para os arquivos de backup.
@@ -142,12 +144,4 @@ Adicionar animações (intro + registro).
 Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 ---
-
-❤️ (EM DESENVOLVIMENTO) 🛡️ Main Screen
-
-- Adicionar funcionalidades:
-
-- Perguntas de segurança.
-
-- Backup
 

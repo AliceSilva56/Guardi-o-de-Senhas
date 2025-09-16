@@ -62,7 +62,9 @@ class SettingsScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: ButtonStyle(
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.red),
+              ),
               child: const Text('Continuar'),
             ),
           ],
@@ -123,6 +125,213 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  // ======================= PERGUNTA DE SEGURANÇA ========================
+  Future<void> _manageSecurityQuestion(BuildContext context) async {
+    final hasQuestion = await SettingsService.hasSecurityQuestion();
+    
+    if (hasQuestion) {
+      final questionData = await SettingsService.getSecurityQuestion();
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Pergunta de Segurança'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Sua pergunta de segurança atual:'),
+                const SizedBox(height: 8),
+                Text(
+                  questionData!['question']!,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                const Text('Deseja alterar sua pergunta de segurança?'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Manter'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showChangeSecurityQuestionDialog(context);
+                },
+                child: const Text('Alterar'),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Pergunta de Segurança'),
+            content: const Text('Você ainda não definiu uma pergunta de segurança. Deseja configurar agora?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Depois'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Configurar'),
+              ),
+            ],
+          ),
+        );
+        
+        if (result == true && context.mounted) {
+          _showChangeSecurityQuestionDialog(context);
+        }
+      }
+    }
+  }
+
+  Future<void> _showChangeSecurityQuestionDialog(BuildContext context) async {
+    final questionController = TextEditingController();
+    final answerController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    
+    // Lista de perguntas padrão (mesma do registro_guardiao_flow.dart)
+    final List<Map<String, String>> perguntasPadrao = [
+      {"id": "pet", "texto": "Qual foi o nome do seu primeiro pet?"},
+      {"id": "cidade", "texto": "Em que cidade você nasceu?"},
+      {"id": "prof", "texto": "Qual era o nome do seu professor favorito?"},
+    ];
+    
+    String? selectedQuestionId;
+    bool isCustomQuestion = false;
+    
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Definir Pergunta de Segurança'),
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Dropdown para selecionar pergunta padrão ou personalizada
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Escolha uma pergunta de segurança',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        ...perguntasPadrao.map((pergunta) => DropdownMenuItem(
+                          value: pergunta['id'],
+                          child: Text(pergunta['texto']!),
+                        )).toList(),
+                        const DropdownMenuItem(
+                          value: 'personalizar',
+                          child: Text('Personalizar pergunta'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          if (value == 'personalizar') {
+                            isCustomQuestion = true;
+                            questionController.clear();
+                          } else {
+                            isCustomQuestion = false;
+                            selectedQuestionId = value;
+                            final perguntaSelecionada = perguntasPadrao.firstWhere(
+                              (p) => p['id'] == value,
+                              orElse: () => {'texto': ''},
+                            );
+                            questionController.text = perguntaSelecionada['texto']!;
+                          }
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || (value == 'personalizar' && questionController.text.isEmpty)) {
+                          return 'Por favor, selecione ou crie uma pergunta';
+                        }
+                        return null;
+                      },
+                    ),
+                    
+                    // Campo para pergunta personalizada (visível apenas quando selecionado)
+                    if (isCustomQuestion)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: TextFormField(
+                          controller: questionController,
+                          decoration: const InputDecoration(
+                            labelText: 'Sua pergunta personalizada',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor, digite sua pergunta';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    
+                    // Campo para resposta
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: TextFormField(
+                        controller: answerController,
+                        decoration: const InputDecoration(
+                          labelText: 'Sua resposta',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Por favor, digite sua resposta';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  if (formKey.currentState!.validate()) {
+                    await SettingsService.setSecurityQuestion(
+                      questionController.text.trim(),
+                      answerController.text.trim(),
+                    );
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pergunta de segurança atualizada com sucesso!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Salvar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   // ======================= BUILD ========================
   @override
   Widget build(BuildContext context) {
@@ -163,6 +372,20 @@ class SettingsScreen extends StatelessWidget {
           title: const Text('Senha do modo confidencial'),
           subtitle: const Text('Desbloqueia apenas conteúdo confidencial'),
           onTap: () => _configureConfidentialPassword(context),
+        ),
+        FutureBuilder<bool>(
+          future: SettingsService.hasSecurityQuestion(),
+          builder: (context, snapshot) {
+            final hasQuestion = snapshot.data ?? false;
+            return ListTile(
+              leading: const Icon(Icons.question_answer),
+              title: const Text('Pergunta de Segurança'),
+              subtitle: Text(hasQuestion 
+                ? 'Pergunta de segurança definida' 
+                : 'Nenhuma pergunta definida'),
+              onTap: () => _manageSecurityQuestion(context),
+            );
+          },
         ),
         FutureBuilder<bool>(
           future: BiometricService.isBiometricAvailable(),
@@ -386,7 +609,9 @@ class SettingsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.all<Color>(Colors.red),
+            ),
             child: const Text('Excluir Conta'),
           ),
         ],
@@ -459,7 +684,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   // Mostra diálogo para inserir a senha fixa
-  static Future<String?> _showStaticPasswordDialog(BuildContext context) async {
+  Future<String?> _showStaticPasswordDialog(BuildContext context) async {
     final controller = TextEditingController();
     bool obscurePassword = true;
     
@@ -700,7 +925,9 @@ Future<void> exportBackup(BuildContext context, {required bool isConfidential}) 
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.all<Color>(Colors.red),
+            ),
             child: const Text('Continuar'),
           ),
         ],
