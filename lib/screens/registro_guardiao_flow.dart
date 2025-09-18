@@ -7,6 +7,8 @@ import 'package:hive/hive.dart';
 import 'package:local_auth/local_auth.dart';
 import '../services/settings_service.dart';
 import '../services/biometric_service.dart';
+import '../services/user_service.dart';
+import '../services/user_service.dart';
 import '../theme/app_colors.dart';
 import 'main_screen.dart';
 import 'package:flutter/services.dart';
@@ -913,19 +915,22 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
                         await SettingsService.setMasterPasswordStatic(
                             senhaCtrl.text.trim());
 
-                        // Salvar perfil
-                        await SettingsService.setProfile(
-                          avatarPath: "",
-                          name: nome,
-                          email: "",
-                        );
+                        // Salvar o nome do usuário no UserService
+                        await UserService.setUserName(nome);
+                        debugPrint('Nome do usuário salvo: $nome');
+                        
+                        // Verificar se o nome foi salvo corretamente
+                        final savedName = await UserService.getUserName();
+                        debugPrint('Nome recuperado: $savedName');
 
-                        // Salvar pergunta de segurança
-                        final box =
-                            await Hive.openBox(SettingsService.settingsBoxName);
-                        await box.put("security_question", pergunta);
-                        await box.put(
-                            "security_answer", respostaCtrl.text.trim());
+                        // Salvar pergunta de segurança usando o método dedicado
+                        await SettingsService.setSecurityQuestion(
+                          pergunta,
+                          respostaCtrl.text.trim(),
+                        );
+                        
+                        // Marcar que o primeiro login foi concluído
+                        await UserService.setFirstLoginDone();
 
                         // Salvar preferência de biometria
                         if (biometriaEscolha) {

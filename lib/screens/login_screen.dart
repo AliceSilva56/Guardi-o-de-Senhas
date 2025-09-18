@@ -22,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isBiometricAvailable = false;
   bool _isLoading = true;
   String _welcomeMessage = 'Bem-vindo(a) ao Guardião de Senhas!';
-  String _userName = '';
 
   @override
   void initState() {
@@ -33,12 +32,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loadWelcomeMessage() async {
     final message = await UserService.getWelcomeMessage();
-    final userName = await UserService.getUserName();
     
     if (mounted) {
       setState(() {
         _welcomeMessage = message;
-        _userName = userName ?? '';
       });
     }
   }
@@ -177,22 +174,24 @@ class _LoginScreenState extends State<LoginScreen> {
     final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
     final secondaryTextColor = theme.textTheme.bodyMedium?.color ?? Colors.grey;
 
-    return Scaffold(
-      backgroundColor: theme.brightness == Brightness.dark 
-          ? AppColors.backgroundDark 
-          : AppColors.backgroundLight,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 40),
-            // Logo e título
-            Column(
-              children: [
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 40),
+              // Logo e título
+              Column(
+                children: [
                 Image.asset(
-                  'assets/logo/guardiao.png',
+                  theme.brightness == Brightness.dark 
+                      ? 'assets/logo/guardiao.png' 
+                      : 'assets/logo/guardiao_modoclaro.png',
                   height: 120,
                   width: 120,
                 ),
@@ -276,6 +275,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
+    )
     );
+
   }
 }

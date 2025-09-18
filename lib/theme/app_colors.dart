@@ -10,7 +10,8 @@ class AppColors {
   static const Color tertiary = Color(0xFFFFD700); // Dourado
 
   static const Color backgroundDark = Color(0xFF121212); // Fundo escuro padrão
-  static const Color backgroundLight = Color(0xFFFFFFFF); // Fundo claro padrão
+  static const Color backgroundLight = Color(0xFFFEF5EC); // Bege claro personalizado
+  static const Color primaryLight = Color.fromARGB(255, 43, 99, 197); // Azul claro
   static const Color textPrimary = Colors.white; // Texto primário claro
   static const Color textSecondary = Colors.white70; // Texto secundário mais suave
   static const Color textLightPrimary = Colors.black; // Texto primário escuro
@@ -34,8 +35,8 @@ class AppColors {
 
 
   // 🤍 Tema Claro
-  static const Color lightBackground = Colors.white; // Fundo claro
-  static const Color lightAppBar = Colors.white; // Fundo claro do AppBar
+  static const Color lightBackground = Color(0xFFFEF5EC); // Fundo claro personalizado
+  static const Color lightAppBar = Color(0xFFFEF5EC); // Fundo claro do AppBar
   static const Color lightTextPrimary = Colors.black; // Texto primário escuro
   static const Color lightTextSecondary = Colors.black87; // Texto secundário mais suave
   static const Color lightInputBackground = Color(0xFFF5F5F5); // Fundo dos campos de entrada claros

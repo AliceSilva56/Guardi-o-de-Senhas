@@ -73,6 +73,9 @@ Future<void> setLoginPassword(String password) async {
 static Future<void> setMasterPasswordStatic(String password) async {
   final box = await Hive.openBox(_boxName);
   await box.put('masterPassword', password);
+  // Garante que a senha também seja salva no SharedPreferences para compatibilidade
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(_masterPasswordKey, password);
 }
 
 static Future<String?> getMasterPasswordStatic() async {
@@ -80,10 +83,38 @@ static Future<String?> getMasterPasswordStatic() async {
   return box.get('masterPassword');
 }
 
-static Future<bool> verifyMasterPassword(String password) async {
-  final saved = await getMasterPasswordStatic();
-  return saved != null && saved == password;
-}
+  static Future<bool> verifyMasterPassword(String password) async {
+    try {
+      // Primeiro tenta verificar na box do Hive
+      final box = await Hive.openBox(_boxName);
+      final savedInHive = box.get('masterPassword');
+      
+      // Se encontrou no Hive, verifica
+      if (savedInHive != null) {
+        return savedInHive == password;
+      }
+      
+      // Se não encontrou no Hive, tenta no SharedPreferences (para compatibilidade com versões antigas)
+      final prefs = await SharedPreferences.getInstance();
+      final savedInPrefs = prefs.getString(_masterPasswordKey);
+      
+      // Se encontrou no SharedPreferences, verifica e migra para o Hive
+      if (savedInPrefs != null) {
+        if (savedInPrefs == password) {
+          // Migra para o Hive
+          await box.put('masterPassword', password);
+          return true;
+        }
+        return false;
+      }
+      
+      // Se não encontrou em nenhum lugar, retorna falso
+      return false;
+    } catch (e) {
+      debugPrint('Erro ao verificar senha mestra: $e');
+      return false;
+    }
+  }
 
   // Agenda a exclusão da conta
   static Future<void> scheduleAccountDeletion() async {

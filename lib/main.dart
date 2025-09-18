@@ -16,6 +16,8 @@ import 'screens/category_screen.dart'; // Importa a tela de categoria
 import 'screens/registro_guardiao_flow.dart'; // Importa a tela de registro do guardião
 import 'services/password_service.dart'; // Importa o serviço de senhas
 import 'services/settings_service.dart';
+import 'theme/app_theme.dart'; // Importa o tema personalizado
+import 'theme/theme_wrapper.dart'; // Importa o wrapper de tema personalizado
 
 void main() async {
   // Initialize Flutter bindings
@@ -129,22 +131,31 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Guardião de Senhas',
           themeMode: themeController.themeMode,
-          theme: ThemeData.light(),
-          darkTheme: ThemeData.dark(),
+          theme: AppTheme.lightTheme.copyWith(
+            scaffoldBackgroundColor: AppColors.backgroundLight,
+          ),
+          darkTheme: AppTheme.darkTheme.copyWith(
+            scaffoldBackgroundColor: AppColors.backgroundDark,
+          ),
           debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            return ThemeWrapper(
+              child: child!,
+            );
+          },
           // Primeira tela exibida
           home: const InitialScreen(),
           routes: {
-            '/elf_intro': (context) => const ElfIntroScreen(),
-            '/login': (context) => const LoginScreen(),
-            '/register': (context) => const RegisterScreen(),
-            '/main': (context) => const MainScreen(),
-            '/backup': (context) => const BackupScreen(),
+            '/elf_intro': (context) => const ThemeWrapper(child: ElfIntroScreen()),
+            '/login': (context) => const ThemeWrapper(child: LoginScreen()),
+            '/register': (context) => const ThemeWrapper(child: RegisterScreen()),
+            '/main': (context) => const ThemeWrapper(child: MainScreen()),
+            '/backup': (context) => const ThemeWrapper(child: BackupScreen()),
             '/category': (context) {
               final args = ModalRoute.of(context)!.settings.arguments as String;
-              return CategoryScreen(category: args);
+              return ThemeWrapper(child: CategoryScreen(category: args));
             },
-            '/registro_guardiao': (context) => const RegistroGuardiaoFlow(),
+            '/registro_guardiao': (context) => const ThemeWrapper(child: RegistroGuardiaoFlow()),
           },
         );
       },

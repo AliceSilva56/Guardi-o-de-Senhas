@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
+import 'settings_service.dart';
 
 class UserService {
   static const String _hasSeenIntroKey = 'has_seen_intro';
@@ -45,14 +46,69 @@ class UserService {
 
   // Obtém o nome do usuário
   static Future<String?> getUserName() async {
-    final box = await Hive.openBox(_userBoxName);
-    return box.get(_userNameKey) as String?;
+    try {
+      // Primeiro tenta obter do perfil no SettingsService
+      final profile = await SettingsService.getProfile();
+      final name = profile['name'] as String?;
+      
+      if (name != null && name.isNotEmpty) {
+        return name;
+      }
+      
+      // Se não encontrar no perfil, tenta obter do UserService (para compatibilidade)
+      final box = await Hive.openBox(_userBoxName);
+      final oldName = box.get(_userNameKey) as String?;
+      
+      // Se encontrar no UserService, migra para o perfil
+      if (oldName != null && oldName.isNotEmpty) {
+        await SettingsService.setProfile(
+          avatarPath: '',
+          name: oldName,
+          email: '',
+        );
+        // Remove o nome antigo do UserService
+        await box.delete(_userNameKey);
+        return oldName;
+      }
+      
+      return null;
+    } catch (e) {
+      debugPrint('Erro ao obter nome do usuário: $e');
+      return null;
+    }
   }
 
   // Define o nome do usuário
   static Future<void> setUserName(String name) async {
-    final box = await Hive.openBox(_userBoxName);
-    await box.put(_userNameKey, name);
+    try {
+      debugPrint('Salvando nome do usuário: $name');
+      
+      // Salva no perfil do SettingsService
+      await SettingsService.setProfile(
+        avatarPath: '',
+        name: name,
+        email: '',
+      );
+      
+      debugPrint('Nome do usuário salvo com sucesso no perfil');
+      
+      // Verificar se o nome foi salvo corretamente
+      final savedName = await getUserName();
+      debugPrint('Nome recuperado após salvar: $savedName');
+      
+      // Remove o nome antigo do UserService se existir
+      try {
+        final box = await Hive.openBox(_userBoxName);
+        if (await box.containsKey(_userNameKey)) {
+          await box.delete(_userNameKey);
+        }
+      } catch (e) {
+        debugPrint('Aviso: não foi possível limpar o nome antigo: $e');
+      }
+    } catch (e) {
+      debugPrint('Erro ao salvar nome do usuário: $e');
+      rethrow;
+    }
   }
 
   // Obtém a data do último login
@@ -86,8 +142,17 @@ class UserService {
     final lastLogin = await getLastLogin();
     final greeting = getGreeting();
     
-    String message = '$greeting${userName != null ? ', $userName' : ''}!';
+    // Mensagem base apenas com a saudação
+    String message = greeting;
     
+    // Adiciona o nome do usuário apenas uma vez
+    if (userName != null && userName.isNotEmpty) {
+      message += ', $userName';
+    }
+    
+    message += '!';
+    
+    // Adiciona mensagem adicional baseada no último login
     if (lastLogin != null) {
       final now = DateTime.now();
       final difference = now.difference(lastLogin);
