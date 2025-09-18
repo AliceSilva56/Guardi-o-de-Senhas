@@ -2,7 +2,7 @@
 
 💙 Últimas Atualizações 16/09/2025
 
-- Configuração e implemntação da Perguntas de segurança.
+- Configuração e implementação da Perguntas de segurança.
 
 - Verificação se os arquivos existentes são realmente necessários.
 
@@ -145,3 +145,61 @@ Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 ---
 
+# ✅ Etapas de Teste – Guardião de Senhas
+🔐 Registro e Login
+
+ ✅ Testar fluxo de registro com senha mestra + pergunta de segurança.
+
+ ✅ Verificar validação de campos vazios e mensagens de erro.
+
+ ✅ Após primeiro acesso, confirmar se vai para a tela de login.
+
+ ✅ Conferir se o app chama o usuário pelo nome registrado (registro e main_screen).
+
+ Verificar se as configuração recebe a senha mestra, nome, pergunta é passada pelo registro flow.
+
+# 🔑 Senhas (Normal e Confidencial)
+
+ Adicionar senha no modo normal e conferir salvamento.
+
+ Adicionar senha no modo confidencial (com categorias) e verificar se não aparece no modo normal.
+
+ Testar ver, editar e excluir senha nos dois modos.
+
+ Testar biometria no modo confidencial.
+
+ Conferir se mudança de senha mestra é reconhecida corretamente.
+
+# 📂 Backup e PDF
+
+ Exportar backup em PDF e verificar se todas as senhas aparecem.
+
+ Importar backup por PDF e checar se dados retornam ao app.
+
+ Conferir mensagem e registro do “último backup realizado”.
+
+ Testar backup também no navegador (web), verificando download do PDF.
+
+ Validar configuração da pasta de backup no dispositivo.
+
+# 🎨 Interface e Experiência
+
+ Conferir tamanho dos avatares no celular.
+
+ Verificar se fontes/frases estão legíveis (modo normal e confidencial).
+
+ Ativar modo confidencial → checar se cores/vibe mudam corretamente.
+
+ Trocar tema claro/escuro e validar se funciona em todas as telas.
+
+# ⚙️ Configurações e Extras
+
+ Testar tela de alteração de senha mestra.
+
+ Conferir se a opção “Limpar dados” só apaga após 30 dias.
+
+ Validar se ao perguntar sobre biometria aparecem opções corretas.
+
+ Confirmar que não existe mais a função de mudar background.
+
+ Verificar se a navegação não duplica mais a main_screen.dart.

@@ -1,8 +1,8 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
-import 'package:local_auth_ios/local_auth_ios.dart' as ios_auth;
-import 'package:local_auth_darwin/local_auth_darwin.dart' as darwin_auth;
+import 'package:local_auth_platform_interface/types/auth_messages.dart';
 import 'package:hive/hive.dart';
 
 // Nomes das chaves para armazenamento
@@ -15,7 +15,21 @@ class BiometricService {
   // Verifica se o dispositivo tem suporte a biometria
   static Future<bool> isBiometricAvailable() async {
     try {
-      return await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+      final bool isSupported = await _auth.isDeviceSupported();
+      if (!isSupported) return false;
+      
+      final bool canCheckBiometrics = await _auth.canCheckBiometrics;
+      if (!canCheckBiometrics) return false;
+      
+      // Verifica se há biometria cadastrada
+      final List<BiometricType> availableBiometrics = await _auth.getAvailableBiometrics();
+      
+      if (availableBiometrics.isEmpty) {
+        debugPrint('Nenhuma biometria cadastrada no dispositivo');
+        return false;
+      }
+      
+      return true;
     } catch (e) {
       debugPrint('Erro ao verificar biometria: $e');
       return false;
@@ -36,31 +50,34 @@ class BiometricService {
   static Future<bool> authenticate() async {
     try {
       final isAvailable = await isBiometricAvailable();
-      if (!isAvailable) return false;
+      if (!isAvailable) {
+        debugPrint('Biometria não disponível');
+        return false;
+      }
 
-      final authenticated = await _auth.authenticate(
+      final bool didAuthenticate = await _auth.authenticate(
         localizedReason: 'Autentique-se para acessar o Guardião de Senhas',
-        authMessages: [
+        authMessages: <AuthMessages>[
           const AndroidAuthMessages(
             signInTitle: 'Autenticação necessária',
             biometricHint: 'Toque no sensor de impressão digital',
             cancelButton: 'Cancelar',
-          ),
-          const darwin_auth.IOSAuthMessages(
-            cancelButton: 'Cancelar',
+            biometricNotRecognized: 'Biometria não reconhecida. Tente novamente.',
+            biometricRequiredTitle: 'Autenticação biométrica necessária',
+            biometricSuccess: 'Autenticação bem-sucedida',
             goToSettingsButton: 'Configurações',
-            goToSettingsDescription: 'Configure sua biometria',
-            lockOut: 'Muitas tentativas. Tente novamente mais tarde.',
+            goToSettingsDescription: 'Configure a biometria nas configurações do dispositivo',
           ),
         ],
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: true,
           useErrorDialogs: true,
+          sensitiveTransaction: true,
         ),
       );
       
-      return authenticated;
+      return didAuthenticate;
     } catch (e) {
       debugPrint('Erro na autenticação biométrica: $e');
       return false;
