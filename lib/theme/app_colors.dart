@@ -10,7 +10,7 @@ class AppColors {
   static const Color tertiary = Color(0xFFFFD700); // Dourado
 
   static const Color backgroundDark = Color(0xFF121212); // Fundo escuro padrão
-  static const Color backgroundLight = Color(0xFFFEF5EC); // Bege claro personalizado
+  static const Color Backgroundlight = Color(0xFFFEF5EC); // Bege claro personalizado
   static const Color primaryLight = Color.fromARGB(255, 43, 99, 197); // Azul claro
   static const Color textPrimary = Colors.white; // Texto primário claro
   static const Color textSecondary = Colors.white70; // Texto secundário mais suave

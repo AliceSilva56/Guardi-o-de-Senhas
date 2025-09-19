@@ -2,6 +2,9 @@
 // Esta tela exibe as "pastas" (categorias) que contêm as senhas, permitindo ao usuário navegar entre elas.
 
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_platform_interface/types/auth_messages.dart';
 //import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import '../models/password_model.dart';
@@ -563,10 +566,9 @@ Widget build(BuildContext context) {
  ),
         ),
       ),
+
       // Ícones de ação na AppBar
       // Ícone para mostrar/ocultar senhas confidenciais
-
-      
 actions: [
   IconButton(
   icon: Icon(
@@ -591,6 +593,9 @@ actions: [
             ? AppColors.darkInputBackground
             : AppColors.lightInputBackground;
 
+// Acesso ao modo confidencial
+        final LocalAuthentication auth = LocalAuthentication();
+        
         return AlertDialog(
           backgroundColor: bgColor,
           title: Text('Acesso Confidencial', style: TextStyle(color: titleColor)),
@@ -616,17 +621,71 @@ actions: [
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancelar', style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.buttonPrimary,
-                foregroundColor: AppColors.buttonText,
-              ),
-              // botão entrar no modo confidencial
-              child: const Text('Entrar'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Botão de biometria (se disponível)
+                FutureBuilder<bool>(
+                  future: auth.isDeviceSupported(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done && snapshot.data == true) {
+                      return IconButton(
+                        icon: const Icon(Icons.fingerprint, size: 32),
+                        color: AppColors.buttonPrimary,
+                        onPressed: () async {
+                          try {
+                            final authenticated = await auth.authenticate(
+                              localizedReason: 'Autentique-se para acessar o modo confidencial',
+                              authMessages: const <AuthMessages>[
+                                AndroidAuthMessages(
+                                  signInTitle: 'Autenticação necessária',
+                                  biometricHint: 'Toque no sensor para continuar',
+                                  cancelButton: 'Cancelar',
+                                ),
+                              ],
+                              options: const AuthenticationOptions(
+                                stickyAuth: true,
+                                useErrorDialogs: true,
+                              ),
+                            );
+
+                            if (authenticated) {
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ConfidencialScreen(),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Falha na autenticação biométrica")),
+                            );
+                          }
+                        },
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+                
+                // Botões de ação
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancelar', style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonPrimary,
+                        foregroundColor: AppColors.buttonText,
+                      ),
+                      child: const Text('Entrar'),
               onPressed: () async {
                 final service = SettingsService();
                 final storedPassword = await SettingsService.getConfidentialPassword(); // ✅ certo
@@ -647,7 +706,11 @@ actions: [
                     const SnackBar(content: Text("Senha incorreta!")),
                   );
                 }
-              },
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         );

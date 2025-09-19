@@ -14,6 +14,8 @@ Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 ---
 
+Coloque o contato de suporte junto com a central de ajude/ tirar a central de ajuda
+
 # ✅ Etapas de Teste – Guardião de Senhas
 🔐 Registro e Login
 
@@ -25,7 +27,7 @@ Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 # 🔑 Senhas (Normal e Confidencial)
 
- Testar biometria no modo confidencial. (nao esta funcionando)
+ ✅ Testar biometria no modo confidencial. (nao esta funcionando)
 
  Conferir se mudança de senha mestra é reconhecida corretamente.
 
@@ -39,7 +41,7 @@ Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 # 🎨 Interface e Experiência
 
- Colocar cores nas opções da configuração
+ ✅ Colocar cores nas opções da configuração
 
 # ⚙️ Configurações e Extras
 

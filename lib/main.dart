@@ -9,7 +9,6 @@ import 'package:provider/provider.dart'; // Importa o pacote Provider
 import 'screens/initial_screen.dart'; // Tela inicial que decide qual tela mostrar
 import 'screens/elf_intro_screen.dart'; // Importa a tela de introdução do elfo
 import 'screens/login_screen.dart'; // Importa a tela de login
-import 'screens/register_screen.dart'; // Importa a tela de registro
 import 'screens/main_screen.dart'; // Importa a tela principal
 import 'screens/backup_screen.dart'; // Importa a tela de backup
 import 'screens/category_screen.dart'; // Importa a tela de categoria
@@ -132,7 +131,7 @@ class MyApp extends StatelessWidget {
           title: 'Guardião de Senhas',
           themeMode: themeController.themeMode,
           theme: AppTheme.lightTheme.copyWith(
-            scaffoldBackgroundColor: AppColors.backgroundLight,
+            scaffoldBackgroundColor: AppColors.lightBackground,
           ),
           darkTheme: AppTheme.darkTheme.copyWith(
             scaffoldBackgroundColor: AppColors.backgroundDark,
@@ -148,7 +147,6 @@ class MyApp extends StatelessWidget {
           routes: {
             '/elf_intro': (context) => const ThemeWrapper(child: ElfIntroScreen()),
             '/login': (context) => const ThemeWrapper(child: LoginScreen()),
-            '/register': (context) => const ThemeWrapper(child: RegisterScreen()),
             '/main': (context) => const ThemeWrapper(child: MainScreen()),
             '/backup': (context) => const ThemeWrapper(child: BackupScreen()),
             '/category': (context) {
@@ -165,8 +163,8 @@ class MyApp extends StatelessWidget {
 
 // Controlador de tema usando ChangeNotifier
 class ThemeController extends ChangeNotifier {
-  late ThemeMode _themeMode;
-  late String _themeModeName;
+  ThemeMode _themeMode = ThemeMode.system; // valor inicial
+  String _themeModeName = 'Sistema';       // valor inicial
 
   ThemeController() {
     _loadTheme();
@@ -191,7 +189,6 @@ class ThemeController extends ChangeNotifier {
   }
 
   void _applyTheme(String mode) {
-    // Remove emoji and trim whitespace for comparison
     final cleanMode = mode.replaceAll(RegExp(r'[^\x00-\x7F]+'), '').trim();
     
     switch (cleanMode) {
@@ -210,3 +207,4 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
   }
 }
+

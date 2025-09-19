@@ -13,6 +13,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
+import 'package:url_launcher/url_launcher.dart';
 import '../services/settings_service.dart';
 import '../services/biometric_service.dart';
 import '../services/pdf_export_service.dart';
@@ -356,34 +357,23 @@ class SettingsScreen extends StatelessWidget {
         const Divider(),
 
         // Opções de Segurança
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text('Opções de Segurança',
-              style: Theme.of(context).textTheme.titleMedium),
-        ),
-        ListTile(
-          leading: const Icon(Icons.lock),
-          title: const Text('Senha mestra'),
-          subtitle: const Text('Protege o acesso ao app'),
-          onTap: () => _configureMasterPassword(context),
-        ),
-        ListTile(
-          leading: const Icon(Icons.lock_outline),
-          title: const Text('Senha do modo confidencial'),
-          subtitle: const Text('Desbloqueia apenas conteúdo confidencial'),
-          onTap: () => _configureConfidentialPassword(context),
-        ),
         FutureBuilder<bool>(
           future: SettingsService.hasSecurityQuestion(),
           builder: (context, snapshot) {
             final hasQuestion = snapshot.data ?? false;
-            return ListTile(
-              leading: const Icon(Icons.question_answer),
-              title: const Text('Pergunta de Segurança'),
-              subtitle: Text(hasQuestion 
-                ? 'Pergunta de segurança definida' 
-                : 'Nenhuma pergunta definida'),
-              onTap: () => _manageSecurityQuestion(context),
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+              color: Colors.indigo.withOpacity(0.1),
+              child: ListTile(
+                leading: const Icon(Icons.question_answer, color: Colors.indigo),
+                title: const Text('Pergunta de Segurança',
+                    style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.w500)),
+                subtitle: Text(hasQuestion 
+                  ? 'Pergunta de segurança definida' 
+                  : 'Nenhuma pergunta definida'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.indigo),
+                onTap: () => _manageSecurityQuestion(context),
+              ),
             );
           },
         ),
@@ -440,11 +430,28 @@ class SettingsScreen extends StatelessWidget {
           child: Text('Personalização',
               style: Theme.of(context).textTheme.titleMedium),
         ),
-        ListTile(
-          leading: const Icon(Icons.color_lens),
-          title: const Text('Tema do aplicativo'),
-          subtitle: const Text('Claro, escuro ou sistema'),
-          onTap: () => _showThemeDialog(context),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          color: Colors.deepPurple.withOpacity(0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: const Icon(Icons.palette, color: Colors.deepPurple, size: 24),
+            ),
+            title: const Text('Tema do Aplicativo',
+                style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold, fontSize: 16)),
+            subtitle: const Text('Escolha entre tema claro, escuro ou sistema'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.deepPurple),
+            onTap: () => _showThemeDialog(context),
+          ),
         ),
         const Divider(),
 
@@ -454,65 +461,586 @@ class SettingsScreen extends StatelessWidget {
           child: Text('Dados e Backup',
               style: Theme.of(context).textTheme.titleMedium),
         ),
-        ListTile(
-          leading: const Icon(Icons.picture_as_pdf),
-          title: const Text('Exportar Backup em PDF'),
-          subtitle: const Text(
-              'Exporta todas as senhas (visíveis e confidenciais)'),
-          onTap: () => PDFExportService.exportBackupPDF(context),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          color: Colors.blue.withOpacity(0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: const Icon(Icons.backup, color: Colors.blue, size: 24),
+            ),
+            title: const Text('Exportar Backup',
+                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16)),
+            subtitle: const Text('Criar cópia de segurança dos seus dados'),
+            trailing: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.blue, size: 20),
+              onSelected: (value) {
+                if (value == 'normal') {
+                  _exportBackup(context, isConfidential: false);
+                } else if (value == 'confidencial') {
+                  _exportBackup(context, isConfidential: true);
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                const PopupMenuItem(
+                  value: 'normal',
+                  child: Row(
+                    children: [
+                      Icon(Icons.save, color: Colors.blue, size: 20),
+                      SizedBox(width: 8),
+                      Text('Backup Normal'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'confidencial',
+                  child: Row(
+                    children: [
+                      Icon(Icons.enhanced_encryption, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Text('Backup Confidencial'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            onTap: () => _exportBackup(context, isConfidential: false),
+          ),
         ),
-        ListTile(
-          leading: const Icon(Icons.history),
-          title: const Text('Último backup realizado'),
-          subtitle: FutureBuilder<Widget>(
-            future: _getLastBackupInfo(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Row(
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          color: Colors.amber.withOpacity(0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: const Icon(Icons.history, color: Colors.amber, size: 24),
+            ),
+            title: const Text('Último backup realizado',
+                style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+            subtitle: FutureBuilder<Widget>(
+              future: _getLastBackupInfo(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amber),
+                      ),
+                      SizedBox(width: 8),
+                      Text('Carregando...'),
+                    ],
+                  );
+                }
+                if (snapshot.hasError) {
+                  return const Text(
+                    'Erro ao carregar informações de backup',
+                    style: TextStyle(color: Colors.red),
+                  );
+                }
+                return snapshot.data ?? const Text('Nenhum backup encontrado');
+              },
+            ),
+            isThreeLine: true,
+          ),
+        ),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          color: Colors.green.withOpacity(0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: const Icon(Icons.restore, color: Colors.green, size: 24),
+            ),
+            title: const Text('Importar Backup',
+                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
+            subtitle: const Text('Restaurar dados de um backup anterior'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green),
+            onTap: () => _importBackup(context),
+          ),
+        ),
+        const Divider(),
+
+        // Documentação e Suporte
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Documentação e Suporte',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? AppColors.primaryDark 
+                    : AppColors.primaryLight,
+                fontWeight: FontWeight.bold,
+              )),
+        ),
+        // Central de Ajuda
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFF1E2D42) 
+              : const Color(0xFFE6F0FF),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF2D3D5A).withOpacity(0.7)
+                    : const Color(0xFFB3C6FF).withOpacity(0.7),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Icon(
+                Icons.help_center, 
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF4D8BFF)
+                    : const Color(0xFF0052CC),
+                size: 24
+              ),
+            ),
+            title: Text(
+              'Central de Ajuda',
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white 
+                    : const Color(0xFF0052CC),
+                fontWeight: FontWeight.bold, 
+                fontSize: 16
+              )
+            ),
+            subtitle: Text(
+              'Encontre respostas para suas dúvidas',
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white70 
+                    : Colors.black87,
+              )
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios, 
+              size: 16, 
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFF4D8BFF)
+                  : const Color(0xFF0052CC),
+            ),
+            onTap: () async {
+              // Mostrar diálogo de confirmação antes de abrir o navegador
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Abrir Navegador'),
+                  content: const Text('Você será redirecionado para o site de ajuda do Guardião de Senhas. Deseja continuar?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancelar'),
                     ),
-                    SizedBox(width: 8),
-                    Text('Carregando...'),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Abrir'),
+                    ),
                   ],
-                );
+                ),
+              );
+
+              if (confirm == true) {
+                // Abre o navegador com a página de ajuda
+                final url = Uri.parse('https://guardiadesenhas.com/ajuda');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(
+                    url, 
+                    mode: LaunchMode.externalApplication,
+                    webViewConfiguration: const WebViewConfiguration(
+                      enableJavaScript: true,
+                      enableDomStorage: true,
+                    ),
+                  );
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Não foi possível abrir a Central de Ajuda'),
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                            ? AppColors.primaryDark 
+                            : AppColors.primaryLight,
+                      ),
+                    );
+                  }
+                }
               }
-              if (snapshot.hasError) {
-                return const Text(
-                  'Erro ao carregar informações de backup',
-                  style: TextStyle(color: Colors.red),
-                );
-              }
-              return snapshot.data ?? const Text('Nenhum backup encontrado');
             },
           ),
-          isThreeLine: true,
         ),
-        ListTile(
-          leading: const Icon(Icons.restore),
-          title: const Text('Importar backup'),
-          subtitle: const Text('Restaurar dados salvos'),
-          onTap: () => _importBackup(context),
+        const SizedBox(height: 8),
+        // Termos de Uso
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFF1E1E2D) 
+              : const Color(0xFFE8F0FE),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF2D2D42).withOpacity(0.7)
+                    : const Color(0xFFD0E3FF).withOpacity(0.7),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Icon(
+                Icons.description, 
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF8A9AFF)
+                    : AppColors.primaryLight,
+                size: 24
+              ),
+            ),
+            title: Text(
+              'Termos de Uso',
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white 
+                    : AppColors.primaryLight,
+                fontWeight: FontWeight.bold, 
+                fontSize: 16
+              )
+            ),
+            subtitle: Text(
+              'Leia nossos termos e condições de uso',
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white70 
+                    : Colors.black87,
+              )
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios, 
+              size: 16, 
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFF8A9AFF)
+                  : AppColors.primaryLight,
+            ),
+            onTap: () {
+              // TODO: Implementar navegação para os Termos de Uso
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Abrindo Termos de Uso...'),
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                      ? AppColors.primaryDark 
+                      : AppColors.primaryLight,
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Documentação do Sistema
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFF2D1E2D) 
+              : const Color(0xFFF9E8FF),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF422D42).withOpacity(0.7)
+                    : const Color(0xFFE8C6FF).withOpacity(0.7),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Icon(
+                Icons.menu_book, 
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFFC77DFF)
+                    : AppColors.primaryDark,
+                size: 24
+              ),
+            ),
+            title: Text(
+              'Documentação do Sistema',
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white 
+                    : AppColors.primaryDark,
+                fontWeight: FontWeight.bold, 
+                fontSize: 16
+              )
+            ),
+            subtitle: Text(
+              'Aprenda a usar todos os recursos do app',
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white70 
+                    : Colors.black87,
+              )
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios, 
+              size: 16, 
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFFC77DFF)
+                  : AppColors.primaryDark,
+            ),
+            onTap: () {
+              // TODO: Implementar navegação para a Documentação
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Abrindo Documentação...'),
+                  backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                      ? AppColors.primaryDark 
+                      : const Color(0xFF8E44AD),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Contato de Suporte
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFF1E2D2D) 
+              : const Color(0xFFE6F7F7),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF2D4242).withOpacity(0.7)
+                    : const Color(0xFFB3E0E0).withOpacity(0.7),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Icon(
+                Icons.support_agent, 
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF4ECDC4)
+                    : const Color(0xFF008B8B),
+                size: 24
+              ),
+            ),
+            title: Text(
+              'Contato de Suporte',
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.white 
+                    : const Color(0xFF008B8B),
+                fontWeight: FontWeight.bold, 
+                fontSize: 16
+              )
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('suporte@guardiadesenhas.com'),
+                const Text('(11) 91234-5678'),
+                const SizedBox(height: 4),
+                Text(
+                  'Segunda a Sexta, das 9h às 18h',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white60 
+                        : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios, 
+              size: 16, 
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFF4ECDC4)
+                  : const Color(0xFF008B8B),
+            ),
+            onTap: () async {
+              // Mostrar menu de opções de contato
+              final result = await showModalBottomSheet<String>(
+                context: context,
+                backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                    ? const Color(0xFF1E2D2D)
+                    : const Color(0xFFE6F7F7),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                builder: (context) => SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          'Como podemos ajudar?',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).brightness == Brightness.dark 
+                                ? Colors.white 
+                                : const Color(0xFF008B8B),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.email,
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? const Color(0xFF4ECDC4)
+                              : const Color(0xFF008B8B),
+                        ),
+                        title: const Text('Enviar e-mail'),
+                        subtitle: const Text('suporte@guardiadesenhas.com'),
+                        onTap: () async {
+                          Navigator.pop(context, 'email');
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.phone,
+                          color: Theme.of(context).brightness == Brightness.dark 
+                              ? const Color(0xFF4ECDC4)
+                              : const Color(0xFF008B8B),
+                        ),
+                        title: const Text('Ligar para suporte'),
+                        subtitle: const Text('(11) 91234-5678'),
+                        onTap: () {
+                          Navigator.pop(context, 'phone');
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Cancelar',
+                          style: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark 
+                                ? Colors.white70 
+                                : Colors.black54,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              );
+
+              if (result == 'email') {
+                final Uri emailLaunchUri = Uri(
+                  scheme: 'mailto',
+                  path: 'suporte@guardiadesenhas.com',
+                  query: 'subject=Suporte - Guardião de Senhas&body=Olá, preciso de ajuda com...',
+                );
+
+                if (await canLaunchUrl(emailLaunchUri)) {
+                  await launchUrl(emailLaunchUri);
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Não foi possível abrir o aplicativo de e-mail'),
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                            ? AppColors.primaryDark 
+                            : AppColors.primaryLight,
+                      ),
+                    );
+                  }
+                }
+              } else if (result == 'phone') {
+                final Uri phoneLaunchUri = Uri(
+                  scheme: 'tel',
+                  path: '+5511912345678',
+                );
+
+                if (await canLaunchUrl(phoneLaunchUri)) {
+                  await launchUrl(phoneLaunchUri);
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Não foi possível realizar a chamada'),
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                            ? AppColors.primaryDark 
+                            : AppColors.primaryLight,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+          ),
         ),
         const Divider(),
 
         // Conta
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child:
-              Text('Conta', style: Theme.of(context).textTheme.titleMedium),
+          child: Text('Conta',
+              style: Theme.of(context).textTheme.titleMedium),
         ),
-        ListTile(
-          leading: const Icon(Icons.delete_forever, color: Colors.red),
-          title: const Text('Excluir minha conta',
-              style: TextStyle(color: Colors.red)),
-          subtitle:
-              const Text('Remove permanentemente todos os seus dados'),
-          onTap: () => _showDeleteAccountConfirmation(context),
+        // Excluir Conta
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+          color: Colors.red.withOpacity(0.1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 2,
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: const Icon(Icons.delete_forever, color: Colors.red, size: 24),
+            ),
+            title: const Text('Excluir minha conta',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+            subtitle: const Text('Remove permanentemente todos os seus dados'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
+            onTap: () => _showDeleteAccountConfirmation(context),
+          ),
         ),
+        const SizedBox(height: 8),
+        // Configurações da Conta
       ],
     ),
   );

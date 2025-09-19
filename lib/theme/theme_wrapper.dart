@@ -17,7 +17,7 @@ class ThemeWrapper extends StatelessWidget {
     return Theme(
       data: isDark ? AppTheme.darkTheme : AppTheme.lightTheme,
       child: Container(
-        color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        color: isDark ? AppColors.backgroundDark : AppColors.lightBackground,
         child: child,
       ),
     );

@@ -16,19 +16,31 @@ class BiometricService {
   static Future<bool> isBiometricAvailable() async {
     try {
       final bool isSupported = await _auth.isDeviceSupported();
-      if (!isSupported) return false;
+      debugPrint('Dispositivo suporta biometria: $isSupported');
+      
+      if (!isSupported) {
+        debugPrint('Dispositivo não suporta autenticação biométrica');
+        return false;
+      }
       
       final bool canCheckBiometrics = await _auth.canCheckBiometrics;
-      if (!canCheckBiometrics) return false;
+      debugPrint('Pode verificar biometria: $canCheckBiometrics');
+      
+      if (!canCheckBiometrics) {
+        debugPrint('Não é possível verificar biometria neste dispositivo');
+        return false;
+      }
       
       // Verifica se há biometria cadastrada
       final List<BiometricType> availableBiometrics = await _auth.getAvailableBiometrics();
+      debugPrint('Biometrias disponíveis: $availableBiometrics');
       
       if (availableBiometrics.isEmpty) {
         debugPrint('Nenhuma biometria cadastrada no dispositivo');
         return false;
       }
       
+      debugPrint('Biometria disponível e configurada corretamente');
       return true;
     } catch (e) {
       debugPrint('Erro ao verificar biometria: $e');
@@ -49,12 +61,27 @@ class BiometricService {
   // Executa a autenticação biométrica
   static Future<bool> authenticate() async {
     try {
-      final isAvailable = await isBiometricAvailable();
-      if (!isAvailable) {
-        debugPrint('Biometria não disponível');
+      // Verifica se o dispositivo tem suporte
+      final bool isSupported = await _auth.isDeviceSupported();
+      if (!isSupported) {
+        debugPrint('Dispositivo não suporta autenticação biométrica');
         return false;
       }
 
+      // Verifica se há biometria configurada
+      final bool canCheckBiometrics = await _auth.canCheckBiometrics;
+      final List<BiometricType> availableBiometrics = await _auth.getAvailableBiometrics();
+      
+      debugPrint('Biometria disponível: $canCheckBiometrics');
+      debugPrint('Tipos de biometria disponíveis: $availableBiometrics');
+
+      if (!canCheckBiometrics || availableBiometrics.isEmpty) {
+        debugPrint('Nenhuma biometria configurada no dispositivo');
+        return false;
+      }
+
+      debugPrint('Iniciando autenticação biométrica...');
+      
       final bool didAuthenticate = await _auth.authenticate(
         localizedReason: 'Autentique-se para acessar o Guardião de Senhas',
         authMessages: <AuthMessages>[
@@ -71,12 +98,13 @@ class BiometricService {
         ],
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: true,
-          useErrorDialogs: true,
-          sensitiveTransaction: true,
+          biometricOnly: true, // Força o uso apenas de biometria, sem senha/pattern
+          useErrorDialogs: true, // Mostra diálogos de erro do sistema
+          sensitiveTransaction: true, // Requer autenticação explícita
         ),
       );
       
+      debugPrint('Resultado da autenticação: $didAuthenticate');
       return didAuthenticate;
     } catch (e) {
       debugPrint('Erro na autenticação biométrica: $e');

@@ -1,13 +1,13 @@
 // Arquivo login_screen.dart para a tela de login do Guardião de Senhas
 // Agora com cores do app_colors.dart e app_theme.dart
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
 import '../theme/app_colors.dart';
 import '../services/settings_service.dart';
 import '../services/biometric_service.dart';
 import '../services/user_service.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'registro_guardiao_flow.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -264,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const RegisterScreen(),
+                    builder: (context) => const RegistroGuardiaoFlow(),
                   ),
                 );
               },

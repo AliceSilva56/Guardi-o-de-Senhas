@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // 🔹 Cores modo claro
-  static const Color backgroundLight = Color(0xFFFEF5EC); // Bege claro personalizado
+  static const Color lightBackground = Color(0xFFFEF5EC); // Bege claro personalizado
   static const Color primaryLight = Color.fromARGB(255, 43, 99, 197); // Azul claro
   static const Color textLight = Color(0xFF333333); // Cinza escuro para melhor contraste
 
@@ -28,13 +28,13 @@ class AppColors {
 class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    scaffoldBackgroundColor: AppColors.backgroundLight,
+    scaffoldBackgroundColor: AppColors.lightBackground,
     primaryColor: AppColors.primaryLight,
     colorScheme: const ColorScheme.light(
       primary: AppColors.primaryLight,
       secondary: Color(0xFF8A4D76), // Cor secundária roxa
       surface: Colors.white,
-      background: AppColors.backgroundLight,
+      background: AppColors.lightBackground,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onSurface: AppColors.textLight,

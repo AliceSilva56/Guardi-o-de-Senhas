@@ -362,17 +362,32 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
                   controller: novaPerguntaCtrl,
                   autofocus: true,
                   maxLines: 2,
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black,
+                  ),
                   decoration: InputDecoration(
                     labelText: "Sua pergunta personalizada",
-                    labelStyle: const TextStyle(color: Colors.white70),
+                    labelStyle: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white70 
+                          : Colors.black54,
+                    ),
                     filled: true,
-                    fillColor: Colors.white12,
+                    fillColor: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white12 
+                        : Colors.grey[100],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white70),
+                      icon: Icon(
+                        Icons.close, 
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.white70 
+                            : Colors.black54,
+                      ),
                       onPressed: () {
                         setState(() {
                           isEditandoPergunta = false;
@@ -429,16 +444,28 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
                   },
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Colors.white12,
+                    fillColor: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white12 
+                        : Colors.grey[100],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     hintText: "Selecione uma pergunta",
-                    hintStyle: const TextStyle(color: Colors.white70),
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white70 
+                          : Colors.black54,
+                    ),
                     errorText: perguntaErro ? "Selecione uma pergunta" : null,
                   ),
-                  dropdownColor: const Color(0xFF2D2D2D),
-                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: Theme.of(context).brightness == Brightness.dark 
+                      ? const Color(0xFF2D2D2D) 
+                      : Colors.white,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Colors.black,
+                  ),
                 ),
 
           const SizedBox(height: 16),
@@ -448,7 +475,11 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
             controller: respostaCtrl,
             maxLines: 2,
             textInputAction: TextInputAction.done,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.white 
+                  : Colors.black,
+            ),
             onFieldSubmitted: (_) {
               if (_validarCampos()) nextPage();
             },
@@ -456,7 +487,9 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
             decoration: InputDecoration(
               hintText: "Resposta",
               filled: true,
-              fillColor: Colors.white12,
+              fillColor: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.white12 
+                  : Colors.grey[100],
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               errorText: respostaErro ? "Digite uma resposta" : null,
@@ -812,6 +845,34 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
     setState(() => _isLoading = true);
 
     try {
+      // Verifica se a biometria está disponível antes de tentar autenticar
+      final isAvailable = await BiometricService.isBiometricAvailable();
+      if (!isAvailable) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        
+        // Verifica se há biometria cadastrada
+        final hasBiometrics = await BiometricService.isBiometricEnrolled();
+        if (!hasBiometrics) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Nenhuma biometria cadastrada no dispositivo. Por favor, cadastre uma biometria nas configurações do dispositivo.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+          return;
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Biometria não disponível. Verifique as configurações do dispositivo.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      // Tenta autenticar
       final authenticated = await BiometricService.authenticate();
 
       if (!mounted) return;
@@ -828,10 +889,10 @@ class _RegistroGuardiaoFlowState extends State<RegistroGuardiaoFlow> {
           await nextPage();
         }
       } else {
-        setState(() => _isLoading = false); // 🔹 garante reset
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Autenticação biométrica necessária para ativar.'),
+            content: Text('Autenticação biométrica falhou ou foi cancelada.'),
             duration: Duration(seconds: 2),
           ),
         );
