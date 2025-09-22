@@ -18,12 +18,155 @@ import '../services/settings_service.dart';
 import '../services/biometric_service.dart';
 import '../services/pdf_export_service.dart';
 import '../services/password_service.dart';
+import '../models/password_model.dart';
 import '../main.dart';
 import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  // ======================= MÉTODOS DE IMPORTAR/EXPORTAR ========================
+  
+  // Método para importar senhas de um arquivo PDF
+  Future<void> _importPasswordsFromPDF(BuildContext context) async {
+    try {
+      // Solicita ao usuário para selecionar um arquivo PDF
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+
+      if (result == null) return; // Usuário cancelou a seleção
+
+      final file = File(result.files.single.path!);
+      
+      // Mostra um indicador de carregamento
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      try {
+        // Extrai as senhas do PDF
+        final passwords = await PDFExportService.extractPasswordsFromPDF(file);
+        
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Fecha o indicador de carregamento
+          
+          if (passwords.isEmpty) {
+            await showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Nenhuma senha encontrada'),
+                content: const Text('Não foi possível encontrar senhas no arquivo PDF selecionado.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+          
+          // Mostra confirmação para importar as senhas
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Confirmar Importação'),
+              content: Text('Deseja importar ${passwords.length} senhas do arquivo PDF?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Importar'),
+                ),
+              ],
+            ),
+          );
+          
+          if (confirm == true) {
+            // Salva as senhas no banco de dados
+            int importedCount = 0;
+            
+            for (final password in passwords) {
+              await PasswordService.addPassword(PasswordModel(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                siteName: password.siteName,
+                username: password.username,
+                password: password.password,
+                category: password.category,
+                notes: password.notes,
+                createdAt: DateTime.now(),
+                lastModified: DateTime.now(),
+                confidential: password.confidential,
+                isConfidential: password.isConfidential,
+              ));
+              importedCount++;
+            }
+            
+            if (context.mounted) {
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Importação Concluída'),
+                  content: Text('$importedCount senhas foram importadas com sucesso!'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.of(context).pop(); // Fecha o indicador de carregamento
+          await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Erro ao Importar'),
+              content: Text('Ocorreu um erro ao importar as senhas: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Erro'),
+            content: Text('Ocorreu um erro ao selecionar o arquivo: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+  
   // ======================= MÉTODOS DE EXPORTAÇÃO ========================
   Future<void> _exportBackup(BuildContext context, {required bool isConfidential}) async {
     final hasPasswords = await PDFExportService.hasPasswordsToExport();
@@ -31,13 +174,13 @@ class SettingsScreen extends StatelessWidget {
       if (context.mounted) {
         await showDialog(
           context: context,
-          builder: (context) => const AlertDialog(
-            title: Text('Nenhuma senha encontrada'),
-            content: Text('Não há senhas para exportar.'),
+          builder: (context) => AlertDialog(
+            title: const Text('Nenhuma senha encontrada'),
+            content: const Text('Não há senhas para exportar.'),
             actions: [
               TextButton(
-                onPressed: null,
-                child: Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
               ),
             ],
           ),
@@ -361,9 +504,10 @@ class SettingsScreen extends StatelessWidget {
           future: SettingsService.hasSecurityQuestion(),
           builder: (context, snapshot) {
             final hasQuestion = snapshot.data ?? false;
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-              color: Colors.indigo.withOpacity(0.1),
+              color: isDark ? Colors.indigo.withOpacity(0.1) : const Color(0xFFFEF5EC),
               child: ListTile(
                 leading: const Icon(Icons.question_answer, color: Colors.indigo),
                 title: const Text('Pergunta de Segurança',
@@ -377,6 +521,7 @@ class SettingsScreen extends StatelessWidget {
             );
           },
         ),
+
         FutureBuilder<bool>(
           future: BiometricService.isBiometricAvailable(),
           builder: (context, snapshot) {
@@ -386,15 +531,14 @@ class SettingsScreen extends StatelessWidget {
                 title: Text('Verificando biometria...'),
               );
             }
-
             final isAvailable = snapshot.data ?? false;
-            
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             return FutureBuilder<bool>(
               future: SettingsService.getBiometryEnabled(),
               builder: (context, enabledSnapshot) {
                 final isEnabled = enabledSnapshot.data ?? false;
-                
                 return SwitchListTile(
+                  tileColor: isDark ? null : const Color(0xFFFEF5EC),
                   title: const Text('Autenticação biométrica'),
                   subtitle: Text(
                     isAvailable 
@@ -432,7 +576,9 @@ class SettingsScreen extends StatelessWidget {
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          color: Colors.deepPurple.withOpacity(0.1),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.deepPurple.withOpacity(0.1)
+              : const Color(0xFFFEF5EC),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -463,7 +609,9 @@ class SettingsScreen extends StatelessWidget {
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          color: Colors.blue.withOpacity(0.1),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.blue.withOpacity(0.1)
+              : const Color(0xFFFEF5EC),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -517,7 +665,9 @@ class SettingsScreen extends StatelessWidget {
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          color: Colors.amber.withOpacity(0.1),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.amber.withOpacity(0.1)
+              : const Color(0xFFFEF5EC),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -563,7 +713,9 @@ class SettingsScreen extends StatelessWidget {
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          color: Colors.green.withOpacity(0.1),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.green.withOpacity(0.1)
+              : const Color(0xFFFEF5EC),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -586,7 +738,7 @@ class SettingsScreen extends StatelessWidget {
         ),
         const Divider(),
 
-        // Documentação e Suporte
+        // Documentação e Suporte --------------------------------------------------
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Text('Documentação e Suporte',
@@ -597,12 +749,13 @@ class SettingsScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               )),
         ),
-        // Central de Ajuda
+
+        // Central de Ajuda ---------------------------------------
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
           color: Theme.of(context).brightness == Brightness.dark 
               ? const Color(0xFF1E2D42) 
-              : const Color(0xFFE6F0FF),
+              : const Color(0xFFFEF5EC),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -625,7 +778,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             title: Text(
-              'Central de Ajuda',
+              'Central de Ajuda e Documentação',
               style: TextStyle(
                 color: Theme.of(context).brightness == Brightness.dark 
                     ? Colors.white 
@@ -635,7 +788,7 @@ class SettingsScreen extends StatelessWidget {
               )
             ),
             subtitle: Text(
-              'Encontre respostas para suas dúvidas',
+              'Encontre respostas para suas dúvidas e veja a documentação do sistema',
               style: TextStyle(
                 color: Theme.of(context).brightness == Brightness.dark 
                     ? Colors.white70 
@@ -646,16 +799,15 @@ class SettingsScreen extends StatelessWidget {
               Icons.arrow_forward_ios, 
               size: 16, 
               color: Theme.of(context).brightness == Brightness.dark 
-                  ? const Color(0xFF4D8BFF)
-                  : const Color(0xFF0052CC),
+                   ? const Color.fromARGB(255, 100, 16, 219) 
+                      : AppColors.primaryLight,
             ),
             onTap: () async {
-              // Mostrar diálogo de confirmação antes de abrir o navegador
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Abrir Navegador'),
-                  content: const Text('Você será redirecionado para o site de ajuda do Guardião de Senhas. Deseja continuar?'),
+                  content: const Text('Você será redirecionado para o site de ajuda e documentação do Guardião de Senhas. Deseja continuar?'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
@@ -668,9 +820,7 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               );
-
               if (confirm == true) {
-                // Abre o navegador com a página de ajuda
                 final url = Uri.parse('https://guardiadesenhas.com/ajuda');
                 if (await canLaunchUrl(url)) {
                   await launchUrl(
@@ -698,7 +848,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Termos de Uso
+        // Termos de Uso --------------------------------------------
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
           color: Theme.of(context).brightness == Brightness.dark 
@@ -756,7 +906,7 @@ class SettingsScreen extends StatelessWidget {
                 SnackBar(
                   content: const Text('Abrindo Termos de Uso...'),
                   backgroundColor: Theme.of(context).brightness == Brightness.dark 
-                      ? AppColors.primaryDark 
+                      ? const Color.fromARGB(255, 100, 16, 219) 
                       : AppColors.primaryLight,
                 ),
               );
@@ -764,72 +914,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        // Documentação do Sistema
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-          color: Theme.of(context).brightness == Brightness.dark 
-              ? const Color(0xFF2D1E2D) 
-              : const Color(0xFFF9E8FF),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          elevation: 2,
-          child: ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? const Color(0xFF422D42).withOpacity(0.7)
-                    : const Color(0xFFE8C6FF).withOpacity(0.7),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Icon(
-                Icons.menu_book, 
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? const Color(0xFFC77DFF)
-                    : AppColors.primaryDark,
-                size: 24
-              ),
-            ),
-            title: Text(
-              'Documentação do Sistema',
-              style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? Colors.white 
-                    : AppColors.primaryDark,
-                fontWeight: FontWeight.bold, 
-                fontSize: 16
-              )
-            ),
-            subtitle: Text(
-              'Aprenda a usar todos os recursos do app',
-              style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? Colors.white70 
-                    : Colors.black87,
-              )
-            ),
-            trailing: Icon(
-              Icons.arrow_forward_ios, 
-              size: 16, 
-              color: Theme.of(context).brightness == Brightness.dark 
-                  ? const Color(0xFFC77DFF)
-                  : AppColors.primaryDark,
-            ),
-            onTap: () {
-              // TODO: Implementar navegação para a Documentação
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Abrindo Documentação...'),
-                  backgroundColor: Theme.of(context).brightness == Brightness.dark 
-                      ? AppColors.primaryDark 
-                      : const Color(0xFF8E44AD),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
+
         // Contato de Suporte
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
@@ -888,8 +973,8 @@ class SettingsScreen extends StatelessWidget {
               Icons.arrow_forward_ios, 
               size: 16, 
               color: Theme.of(context).brightness == Brightness.dark 
-                  ? const Color(0xFF4ECDC4)
-                  : const Color(0xFF008B8B),
+                  ? const Color(0xFF4ECDC4) // Cor de destaque para tema escuro
+                  : const Color(0xFF008B8B), // Cor de destaque para tema claro
             ),
             onTap: () async {
               // Mostrar menu de opções de contato
@@ -1027,15 +1112,15 @@ class SettingsScreen extends StatelessWidget {
             leading: Container(
               padding: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.2),
+                color: Colors.red.withOpacity(0.3), // cor de fundo vermelho claro
                 borderRadius: BorderRadius.circular(8.0),
               ),
-              child: const Icon(Icons.delete_forever, color: Colors.red, size: 24),
+              child: const Icon(Icons.delete_forever, color: Colors.red, size: 24), // ícone de exclusão
             ),
             title: const Text('Excluir minha conta',
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),// título em vermelho
             subtitle: const Text('Remove permanentemente todos os seus dados'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red), // ícone de seta
             onTap: () => _showDeleteAccountConfirmation(context),
           ),
         ),
@@ -1758,14 +1843,25 @@ Future<void> exportBackup(BuildContext context, {required bool isConfidential}) 
                 for (final password in batch) {
                   try {
                     // Verifica se já existe uma senha com os mesmos dados
-                    final exists = await passwordService.passwordExists(
+                    final exists = await PasswordService().passwordExists(
                       siteName: password.siteName,
                       username: password.username,
                       password: password.password,
                     );
                     
                     if (!exists) {
-                      await PasswordService.addPassword(password);
+await PasswordService.addPassword(PasswordModel(
+                        id: password.id,
+                        siteName: password.siteName,
+                        username: password.username,
+                        password: password.password,
+                        category: password.category,
+                        notes: password.notes,
+                        createdAt: password.createdAt,
+                        lastModified: DateTime.now(),
+                        confidential: password.confidential,
+                        isConfidential: password.isConfidential,
+                      ));
                       addedCount++;
                     }
                     

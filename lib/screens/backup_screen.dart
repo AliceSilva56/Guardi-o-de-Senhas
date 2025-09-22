@@ -3,10 +3,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import '../services/password_service.dart';
 import '../services/settings_service.dart';
-import '../theme/app_colors.dart';
 
 class BackupScreen extends StatefulWidget {
   const BackupScreen({super.key});
@@ -185,7 +182,6 @@ class _BackupScreenState extends State<BackupScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
     final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
 
     return Scaffold(

@@ -199,13 +199,15 @@ class PasswordService {
       box.toMap().forEach((key, value) {
         try {
           final password = PasswordModel.fromMap(key.toString(), value);
-          if (includeConfidential || !password.confidential) {
-            passwords.add(password);
-          }
+          passwords.add(password);
         } catch (e) {
           debugPrint('Error parsing password $key: $e');
         }
       });
+
+      debugPrint('Total de senhas no banco de dados: ${passwords.length}');
+      debugPrint('Senhas confidenciais: ${passwords.where((p) => p.confidential || p.isConfidential).length}');
+      debugPrint('Senhas normais: ${passwords.where((p) => !p.confidential && !p.isConfidential).length}');
 
       return passwords;
     } catch (e) {
@@ -215,30 +217,40 @@ class PasswordService {
   }
 
   static List<PasswordModel> getByCategory(String category, {bool includeConfidential = false}) {
-    if (category == 'all') return getAllPasswords(includeConfidential: includeConfidential);
-    return getAllPasswords(includeConfidential: includeConfidential).where((p) => p.category == category).toList();
+    final allPasswords = getAllPasswords();
+    
+    if (category == 'all') {
+      return includeConfidential 
+          ? allPasswords 
+          : allPasswords.where((p) => !p.confidential && !p.isConfidential).toList();
+    }
+    
+    final filtered = allPasswords.where((p) => p.category == category).toList();
+    
+    return includeConfidential 
+        ? filtered 
+        : filtered.where((p) => !p.confidential && !p.isConfidential).toList();
   }
 
   static List<PasswordModel> searchPasswords(String query, {bool includeConfidential = false}) {
     try {
-      final box = _getPasswordsBox();
-      final List<PasswordModel> results = [];
+      final allPasswords = getAllPasswords();
       final queryLower = query.toLowerCase();
-
-      box.toMap().forEach((key, value) {
-        try {
-          final password = PasswordModel.fromMap(key.toString(), value);
-          if ((includeConfidential || !password.confidential) &&
-              (password.siteName.toLowerCase().contains(queryLower) ||
-               password.username.toLowerCase().contains(queryLower) ||
-               (password.notes?.toLowerCase().contains(queryLower) ?? false))) {
-            results.add(password);
-          }
-        } catch (e) {
-          debugPrint('Error searching password $key: $e');
-        }
-      });
-
+      
+      // Filtra as senhas que correspondem à pesquisa
+      var results = allPasswords.where((password) =>
+        password.siteName.toLowerCase().contains(queryLower) ||
+        password.username.toLowerCase().contains(queryLower) ||
+        (password.notes?.toLowerCase().contains(queryLower) ?? false)
+      ).toList();
+      
+      // Aplica o filtro de confidencialidade se necessário
+      if (!includeConfidential) {
+        results = results.where((p) => !p.confidential && !p.isConfidential).toList();
+      }
+      
+      debugPrint('Resultados da busca: ${results.length} senhas encontradas');
+      
       return results;
     } catch (e) {
       debugPrint('Error searching passwords: $e');

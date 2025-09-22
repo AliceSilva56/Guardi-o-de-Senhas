@@ -15,7 +15,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
-  final _service = SettingsService();
 
   void _changePassword() async {
     final current = _currentController.text.trim();
@@ -25,6 +24,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final isValid = await SettingsService.verifyMasterPassword(current);
 
     if (!isValid) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Senha atual incorreta")),
       );
@@ -32,6 +32,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     }
 
     if (newPass.isEmpty || newPass != confirm) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Nova senha inválida ou não confere")),
       );
@@ -39,11 +40,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     }
 
     await SettingsService.setMasterPasswordStatic(newPass);
-
+// ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Senha alterada com sucesso")),
     );
-
+// ignore: use_build_context_synchronously
     Navigator.pop(context);
   }
 

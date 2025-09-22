@@ -33,6 +33,7 @@ class PasswordModel {
         'category': category,
         'notes': notes,
         'confidential': confidential,
+        'isConfidential': isConfidential,
         'createdAt': createdAt.toIso8601String(),
         'lastModified': lastModified.toIso8601String(),
       };
@@ -46,6 +47,7 @@ class PasswordModel {
       category: data['category'],
       notes: data['notes'],
       confidential: data['confidential'] ?? false,
+      isConfidential: data['isConfidential'] ?? false,
       createdAt: DateTime.parse(data['createdAt']),
       lastModified: DateTime.parse(data['lastModified']),
     );

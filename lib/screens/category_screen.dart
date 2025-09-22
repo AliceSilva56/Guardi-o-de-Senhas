@@ -60,7 +60,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     bool obscurePassword = true;
     String strengthText = '';
-    String strengthLevel = '';
 
     String? errorUser;
     String? errorPassword;
@@ -68,7 +67,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
     void updateStrength(String pwd, void Function(void Function()) innerSetState) {
       final res = PasswordService.calculatePasswordStrength(pwd);
       strengthText = res['text']!;
-      strengthLevel = res['level']!;
       innerSetState(() {});
     }
 
@@ -203,7 +201,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   lastModified: DateTime.now(),
                 );
 
-                final passwordService = PasswordService();
                 if (editing == null) {
                   await PasswordService.addPassword(model);
                 } else {
@@ -211,6 +208,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 }
 
                 loadCategoryPasswords();
+                // ignore: use_build_context_synchronously
                 Navigator.pop(context);
               },
               child: const Text('Salvar'),

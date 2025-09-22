@@ -14,7 +14,8 @@ Possibilidade de trocar imagens por vídeos curtos para cada etapa.
 
 ---
 
-- Coloque o contato de suporte junto com a central de ajude/ tirar a central de ajuda
+- Coloque a documentação do sistema, no site que vai abrir quanado clicar na central de ajuda
+
 - Ajustar cores das configurações no modo claro
 
 # ✅ Etapas de Teste – Guardião de Senhas

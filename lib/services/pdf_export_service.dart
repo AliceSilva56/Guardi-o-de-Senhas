@@ -1,10 +1,12 @@
 // lib/services/pdf_export_service.dart
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
+import 'dart:io' show Platform, Directory, File;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -34,12 +36,24 @@ class PDFExportService {
 
     final now = DateTime.now();
     
-    // Obtém as senhas usando o PasswordService
-    final normalPasswords = PasswordService.getAllPasswords(includeConfidential: false);
-    final confidentialPasswords = PasswordService.getAllPasswords(includeConfidential: true)
-        .where((p) => p.confidential)
+    // Obtém todas as senhas
+    final allPasswords = PasswordService.getAllPasswords(includeConfidential: true);
+    
+    // Filtra as senhas normais e confidenciais
+    final normalPasswords = allPasswords
+        .where((p) => !p.confidential && !p.isConfidential)
         .toList();
+        
+    final confidentialPasswords = allPasswords
+        .where((p) => p.confidential || p.isConfidential)
+        .toList();
+        
     final generatedAt = DateFormat('dd/MM/yyyy HH:mm').format(now);
+    
+    // Log para depuração
+    debugPrint('Total de senhas encontradas: ${allPasswords.length}');
+    debugPrint('Senhas normais: ${normalPasswords.length}');
+    debugPrint('Senhas confidenciais: ${confidentialPasswords.length}');
 
     // Construção do documento
     pdf.addPage(
@@ -246,45 +260,182 @@ class PDFExportService {
 
   /// Verifica se existem senhas (visíveis ou confidenciais) para exportar
   static Future<bool> hasPasswordsToExport() async {
-    final normalBox = await Hive.openBox('passwords');
-    final confidentialBox = await Hive.openBox('confidential_passwords');
-    return normalBox.isNotEmpty || confidentialBox.isNotEmpty;
+    try {
+      final box = await Hive.openBox(PasswordService.passwordsBoxName);
+      final hasPasswords = box.isNotEmpty;
+      debugPrint('Verificando senhas para exportação: ${hasPasswords ? 'Encontradas' : 'Nenhuma encontrada'}');
+      return hasPasswords;
+    } catch (e) {
+      debugPrint('Erro ao verificar senhas para exportação: $e');
+      return false;
+    }
   }
 
   /// Exporta apenas as senhas de um tipo (normal/confidencial)
   static Future<File> exportPasswordsToPDF({required bool isConfidential}) async {
-    final pdf = pw.Document();
-    final now = DateTime.now();
-    final generatedAt = DateFormat('dd/MM/yyyy HH:mm').format(now);
+    try {
+      debugPrint('Iniciando exportação de senhas (isConfidential=$isConfidential)');
+      
+      final pdf = pw.Document();
+      final now = DateTime.now();
+      final generatedAt = DateFormat('dd/MM/yyyy HH:mm').format(now);
 
-    final box = await Hive.openBox(
-        isConfidential ? 'confidential_passwords' : 'passwords');
+      // Obtém todas as senhas
+      debugPrint('Obtendo todas as senhas...');
+      final allPasswords = PasswordService.getAllPasswords(includeConfidential: true);
+      
+      // Log para depuração
+      debugPrint('Total de senhas encontradas: ${allPasswords.length}');
+      
+      if (allPasswords.isEmpty) {
+        debugPrint('AVISO: Nenhuma senha encontrada no banco de dados');
+      } else {
+        // Log detalhado das primeiras 5 senhas para depuração
+        debugPrint('=== DETALHES DAS SENHAS ENCONTRADAS ===');
+        for (var i = 0; i < allPasswords.length && i < 5; i++) {
+          final p = allPasswords[i];
+          debugPrint('Senha ${i+1}:');
+          debugPrint('  Site: ${p.siteName}');
+          debugPrint('  Usuário: ${p.username}');
+          debugPrint('  Categoria: ${p.category}');
+          debugPrint('  Confidencial: ${p.confidential}');
+          debugPrint('  isConfidential: ${p.isConfidential}');
+          debugPrint('  --------------------');
+        }
+        if (allPasswords.length > 5) {
+          debugPrint('... e mais ${allPasswords.length - 5} senhas');
+        }
+        debugPrint('====================================');
+      }
+      
+      debugPrint('Senhas confidenciais: ${allPasswords.where((p) => p.confidential || p.isConfidential).length}');
+      debugPrint('Senhas normais: ${allPasswords.where((p) => !p.confidential && !p.isConfidential).length}');
+      
+      // Filtra as senhas com base no parâmetro isConfidential
+      debugPrint('Filtrando senhas (isConfidential=$isConfidential)...');
+      final filteredPasswords = allPasswords.where((p) => 
+        isConfidential 
+          ? (p.confidential || p.isConfidential)
+          : (!p.confidential && !p.isConfidential)
+      ).toList();
+      
+      debugPrint('Filtro aplicado: ${filteredPasswords.length} senhas atendem aos critérios');
+      
+      if (filteredPasswords.isEmpty) {
+        debugPrint('AVISO: Nenhuma senha atende aos critérios de filtro');
+      }
 
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (ctx) => [
-          pw.Text(
-            'Backup ${isConfidential ? "Confidencial" : "Normal"}',
-            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-          ),
-          pw.SizedBox(height: 8),
-          pw.Text('Gerado em: $generatedAt', style: pw.TextStyle(fontSize: 10)),
-          pw.SizedBox(height: 12),
-          if (box.isEmpty)
-            pw.Text('Nenhuma senha encontrada',
-                style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic))
-          else
-            ...box.values.map((p) => _buildPasswordEntry(p)),
-        ],
-      ),
-    );
+      // Carrega as fontes
+      final fontRegular = pw.Font.ttf(await rootBundle.load("assets/fonts/Roboto-Regular.ttf"));
+      final fontBold = pw.Font.ttf(await rootBundle.load("assets/fonts/Roboto-Bold.ttf"));
 
-    final dir = await getApplicationDocumentsDirectory();
-    final ts = _formatForFilename(now);
-    final file = File('${dir.path}/backup_${isConfidential ? "confidencial" : "normal"}_$ts.pdf');
-    await file.writeAsBytes(await pdf.save());
-    return file;
+      // Define o tema
+      final theme = pw.ThemeData.withFont(
+        base: fontRegular,
+        bold: fontBold,
+      );
+
+      // Adiciona a página ao PDF
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          theme: theme,
+          build: (pw.Context context) => [
+            // Cabeçalho
+            pw.Text(
+              'Backup de Senhas ${isConfidential ? 'Confidenciais' : 'Normais'}',
+              style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Text('Gerado em: $generatedAt', style: pw.TextStyle(fontSize: 10)),
+            pw.SizedBox(height: 16),
+            
+            // Aviso de confidencialidade
+            if (isConfidential)
+              pw.Container(
+                padding: pw.EdgeInsets.all(8),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(width: 0.8),
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+                ),
+                child: pw.Text(
+                  '[!] AVISO DE CONFIDENCIALIDADE\n\n'
+                  'Este documento contém informações sensíveis (senhas). ' 
+                  'Mantenha-o em local seguro e não compartilhe com terceiros.',
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+            
+            pw.SizedBox(height: 16),
+            
+            // Lista de senhas
+            if (filteredPasswords.isEmpty)
+              pw.Text(
+                'Nenhuma senha ${isConfidential ? 'confidencial' : 'normal'} encontrada.',
+                style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic),
+              )
+            else
+              ...filteredPasswords.map((p) => _buildPasswordEntry(p.toMap())).toList(),
+          ],
+        ),
+      );
+
+      // Tenta salvar na pasta de Downloads primeiro
+      Directory? downloadDir;
+      try {
+        if (Platform.isAndroid) {
+          // No Android, tenta obter o diretório de Downloads
+          downloadDir = Directory('/storage/emulated/0/Download');
+          if (!await downloadDir.exists()) {
+            downloadDir = await getExternalStorageDirectory();
+          }
+        } else if (Platform.isIOS) {
+          // No iOS, usa o diretório de documentos
+          downloadDir = await getApplicationDocumentsDirectory();
+        }
+      } catch (e) {
+        debugPrint('Erro ao obter diretório de download: $e');
+        // Se falhar, usa o diretório de documentos do app
+        downloadDir = await getApplicationDocumentsDirectory();
+      }
+
+      final ts = _formatForFilename(now);
+      final fileName = 'backup_${isConfidential ? 'confidencial' : 'normal'}_$ts.pdf';
+      final file = File('${downloadDir!.path}/$fileName');
+      
+      try {
+        await file.writeAsBytes(await pdf.save());
+        debugPrint('Arquivo salvo em: ${file.path}');
+        
+        // No Android, notifica o sistema sobre o novo arquivo
+        if (Platform.isAndroid) {
+          try {
+            final result = await const MethodChannel('plugins.flutter.io/path_provider')
+                .invokeMethod('getExternalStorageDirectory');
+            if (result != null) {
+              final scanResult = await const MethodChannel('com.example.guardiao_de_senhas/file_channel')
+                  .invokeMethod('scanFile', {'path': file.path});
+              debugPrint('Arquivo escaneado: $scanResult');
+            }
+          } catch (e) {
+            debugPrint('Erro ao notificar sobre o novo arquivo: $e');
+          }
+        }
+        
+        return file;
+      } catch (e) {
+        debugPrint('Erro ao salvar o arquivo: $e');
+        // Se falhar, tenta salvar no diretório de documentos do app
+        final appDocDir = await getApplicationDocumentsDirectory();
+        final fallbackFile = File('${appDocDir.path}/$fileName');
+        await fallbackFile.writeAsBytes(await pdf.save());
+        debugPrint('Arquivo salvo em: ${fallbackFile.path}');
+        return fallbackFile;
+      }
+    } catch (e) {
+      debugPrint('Erro ao exportar PDF: $e');
+      rethrow;
+    }
   }
 
   /// Abre o PDF com o aplicativo padrão do dispositivo
@@ -306,8 +457,17 @@ class PDFExportService {
       final fileName = 'backup_${isConfidential ? 'confidencial_' : ''}$timestamp.gbackup';
       final file = File('${directory.path}/$fileName');
 
-      // Obtém as senhas
-      final passwords = PasswordService.getAllPasswords(includeConfidential: isConfidential);
+      // Obtém todas as senhas
+      final allPasswords = PasswordService.getAllPasswords(includeConfidential: true);
+      
+      // Filtra as senhas com base no parâmetro isConfidential
+      final passwords = allPasswords.where((p) => 
+        isConfidential 
+          ? (p.confidential || p.isConfidential)
+          : (!p.confidential && !p.isConfidential)
+      ).toList();
+      
+      debugPrint('Exportando backup (isConfidential=$isConfidential): ${passwords.length} senhas');
       
       // Obtém as configurações
       final settingsBox = await Hive.openBox('settings');
