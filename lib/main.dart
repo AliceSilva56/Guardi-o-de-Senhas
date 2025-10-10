@@ -29,20 +29,21 @@ void main() async {
   if (!Hive.isBoxOpen('guardiao_passwords')) {
     await Hive.openBox('guardiao_passwords');
   }
-  
+  // Open settings and profile boxes
   if (!Hive.isBoxOpen('settings')) {
     await Hive.openBox('settings');
   }
-  
+  // Open additional boxes as needed
   if (!Hive.isBoxOpen('profile')) {
     await Hive.openBox('profile');
   }
-  
+  // Open user preferences box
   if (!Hive.isBoxOpen('user_preferences')) {
     await Hive.openBox('user_preferences');
   }
   
   // Check for pending account deletion
+  // check a pedir exclusao de conta
   final shouldDelete = await SettingsService.checkAndProcessDeletion();
   
   runApp(

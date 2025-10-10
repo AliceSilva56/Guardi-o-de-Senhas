@@ -2,19 +2,57 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io' show Platform, Directory, File;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
-import 'dart:io' show Platform, Directory, File;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart' show PdfDocument;
+import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import 'package:intl/intl.dart';
+import 'dart:typed_data';
 import 'password_service.dart';
 import 'settings_service.dart';
 import '../models/password_model.dart';
+
+// Função auxiliar para extrair texto de um PDF
+Future<String> extractTextFromPdf(File file) async {
+  try {
+    debugPrint('Extraindo texto do PDF usando pdftotext...');
+    
+    // Converte o PDF para texto usando pdftotext
+    final process = await Process.run('pdftotext', [
+      '-layout',  // Mantém o layout original
+      '-eol', 'unix',  // Usa quebras de linha Unix
+      '-enc', 'UTF-8',  // Codificação UTF-8
+      file.path,  // Arquivo de entrada
+      '-'  // Saída para stdout
+    ]);
+    
+    debugPrint('pdftotext concluído. Código de saída: ${process.exitCode}');
+    
+    if (process.exitCode != 0) {
+      debugPrint('Erro no pdftotext: ${process.stderr}');
+      throw Exception('Falha ao extrair texto do PDF: ${process.stderr}');
+    }
+    
+    final text = process.stdout.toString().trim();
+    debugPrint('Texto extraído (${text.length} caracteres)');
+    
+    if (text.isEmpty) {
+      throw Exception('O PDF não contém texto extraível ou está vazio');
+    }
+    
+    return text;
+  } catch (e) {
+    debugPrint('Erro ao extrair texto do PDF: $e');
+    rethrow;
+  }
+}
 
 class PDFExportService {
   /// Exporta backup PDF com senhas "visíveis" (box 'passwords')
@@ -526,29 +564,51 @@ class PDFExportService {
       
       if (fileSize == 0) {
         debugPrint('⚠️ Aviso: O arquivo está vazio');
-        return [];
+        throw Exception('O arquivo PDF está vazio');
       }
       
       // Lê o conteúdo do PDF como texto
-      debugPrint('🔍 Executando pdftotext no arquivo...');
+      debugPrint('🔍 Extraindo texto do PDF...');
       
-      // Usa parâmetros adicionais para melhor extração de texto
-      final process = await Process.run('pdftotext', [
-        '-layout',  // Mantém o layout original
-        '-eol', 'unix',  // Usa quebras de linha Unix
-        '-enc', 'UTF-8',  // Codificação UTF-8
-        pdfFile.path,  // Arquivo de entrada
-        '-'  // Saída para stdout
-      ]);
+      String pdfText = '';
       
-      if (process.exitCode != 0) {
-        debugPrint('❌ Erro ao executar pdftotext. Código: ${process.exitCode}');
-        debugPrint('📝 Saída de erro: ${process.stderr}');
-        throw Exception('Falha ao ler o PDF: ${process.stderr}');
+      try {
+        // Tenta extrair o texto usando nossa função auxiliar
+        pdfText = await extractTextFromPdf(pdfFile);
+        debugPrint('✅ Texto extraído com sucesso do PDF');
+      } catch (e) {
+        debugPrint('⚠️ Não foi possível extrair texto com extractTextFromPdf: $e');
+        debugPrint('🔍 Tentando com pdftotext...');
+        
+        // Se falhar, tenta com pdftotext
+        try {
+          final process = await Process.run('pdftotext', [
+            '-layout',  // Mantém o layout original
+            '-eol', 'unix',  // Usa quebras de linha Unix
+            '-enc', 'UTF-8',  // Codificação UTF-8
+            pdfFile.path,  // Arquivo de entrada
+            '-'  // Saída para stdout
+          ]);
+          
+          if (process.exitCode != 0) {
+            debugPrint('❌ Erro ao executar pdftotext. Código: ${process.exitCode}');
+            debugPrint('📝 Saída de erro: ${process.stderr}');
+            throw Exception('Falha ao ler o PDF com pdftotext: ${process.stderr}');
+          }
+          
+          pdfText = process.stdout.toString().trim();
+        } catch (e) {
+          debugPrint('❌ Erro ao usar pdftotext: $e');
+          throw Exception('Não foi possível extrair texto do PDF. Certifique-se de que o arquivo é um PDF válido.');
+        }
       }
       
-      String pdfText = process.stdout.toString().trim();
-      debugPrint('📝 Conteúdo bruto do PDF (${pdfText.length} caracteres)');
+      if (pdfText.isEmpty) {
+        debugPrint('⚠️ AVISO: O conteúdo extraído do PDF está vazio!');
+        throw Exception('Não foi possível extrair texto do PDF. O arquivo pode estar protegido ou corrompido.');
+      }
+      
+      debugPrint('📝 Conteúdo extraído (${pdfText.length} caracteres)');
       
       // Log apenas do início e fim do conteúdo para não poluir os logs
       if (pdfText.isNotEmpty) {
