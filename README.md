@@ -1,3 +1,85 @@
+---
+
+## 🗝️ 2. **Guardião de Senha**
+
+```markdown
+# 🔐 Guardião de Senha — segurança que você pode confiar
+
+> *"Cada senha no seu lugar, com privacidade e paz de espírito."*
+
+---
+
+## ℹ️ Sobre o projeto
+
+O **Guardião de Senha** é um app pensado para guardar suas credenciais com total segurança e simplicidade.  
+Você nunca mais esquece uma senha — e pode manter tudo protegido.
+
+---
+
+## ⚙️ Funcionalidades
+
+- 🔏 Armazenamento criptografado  
+- 🗂️ Categorias e tags para organização  
+- 🔍 Busca inteligente  
+- 🛡️ Autenticação (senha mestre / biometria)  
+- ✏️ Edição, remoção e atualização fácil  
+
+---
+
+## 🌐 Demo online
+
+[🔗 Ver demo do Guardião de Senha](https://guardi-o-de-senhas-web.vercel.app/)
+
+---
+
+## 🛠 Tecnologias
+
+Feito em **Flutter**, com foco em segurança e usabilidade.  
+Uso de técnicas de criptografia, armazenamento seguro e interface limpa.
+
+---
+
+## 🚀 Como executar localmente
+
+```bash
+git clone https://github.com/seuusuario/guardiao-senha.git  
+cd guardiao-senha  
+flutter pub get  
+flutter run -d chrome
+
+
+
+---
+
+🧩 Próximos passos
+
+Sincronização com nuvem segura
+
+Exportação/importação cifrada
+
+Ajustes visuais e animações protetoras
+
+
+
+---
+
+🧷 Autoria
+
+Feito por Alice Pinheiro 💡
+🔗 Meu GitHub
+
+
+---
+
+🪶 Licença
+
+MIT — sinta-se livre para usar e colaborar!
+
+⭐ Não esqueça de deixar uma estrela 😉
+
+---
+
+
 # Próximas Etapas (❤️) Importante, (💛) Necessária e (💚) Opcional
 
 ---
